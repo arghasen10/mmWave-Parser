@@ -5,3 +5,4 @@ dataset.csv
 *.csv
 .env
 results/
+videodata/

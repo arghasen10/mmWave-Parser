@@ -2,7 +2,7 @@ import cv2
 import time
 # Create an object to read 
 # from camera
-video = cv2.VideoCapture(0)
+video = cv2.VideoCapture(2)
 startime = time.time()
 # We need to check if camera
 # is opened previously or not
@@ -24,7 +24,7 @@ filename+=time.strftime("%Y%m%d_%H%M%S")
 filename+='.avi'
 result = cv2.VideoWriter(filename, 
                          cv2.VideoWriter_fourcc(*'MJPG'),
-                         10, size)
+                         30, size)
     
 while(True):
     ret, frame = video.read()
@@ -50,11 +50,11 @@ while(True):
         # Display the frame
         # saved in the file
         
-        #cv2.imshow('Frame', frame)
+        cv2.imshow('Frame', frame)
   
         # Press S on keyboard 
         # to stop the process
-        if cv2.waitKey(1) & 0xFF == ord('s'):
+        if cv2.waitKey(30) & 0xFF == ord('s'):
             break
   
     # Break the loop
