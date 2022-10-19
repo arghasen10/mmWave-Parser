@@ -297,7 +297,7 @@ def processAzimuthHeatMap(byteBuffer, idX, configParameters):
 
 def processRangeDopplerHeatMap(byteBuffer, idX):
     # Get the number of bytes to read
-    numBytes = 8192
+    numBytes = int(configParameters["numDopplerBins"]) * int(configParameters["numRangeBins"]) * 2
     # Convert the raw data to int16 array
     payload = byteBuffer[idX:idX + numBytes]
     idX += numBytes
