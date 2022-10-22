@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv('.env')
 os_name = os.environ.get("OS")
 framePeriodicity = 0
-configFileName = 'Configurations/micro_2fps.cfg'
+configFileName = 'Configurations/pointcloud_configuration.cfg'
 CLIport = {}
 Dataport = {}
 byteBuffer = np.zeros(2 ** 15, dtype='uint8')
@@ -25,6 +25,7 @@ xlin, ylin = [], []
 NUM_ANGLE_BINS = 64
 range_depth = 10
 range_width = 5
+frameCount = 0
 
 header = ['Date', 'Time', 'numObj', 'rangeIdx', 'range', 'dopplerIdx',
           'doppler', 'peakVal', 'x', 'y', 'z', 'rp', 'noiserp',
@@ -162,9 +163,29 @@ def reshape_rowbased(vec, rows, cols):
     return t
 
 
+def check_for_macro(x):
+	global frameCount,CLIport,Dataport,configParameters
+	
+	# checking if 'x' is empty or not
+    if len(x) != 0:
+        frameCount += 1
+    else:
+        frameCount = 0
+		
+	# checking if 'x' is non-empty for 30 consecutive frames
+    if frameCount == 30:
+        # changing configuration to macro
+        configFileName = 'Configurations/macro_7fps.cfg'		
+        CLIport, Dataport = serialConfig(configFileName)
+        configParameters = parseConfigFile(configFileName)
+        frameCount = 0
+
+
 # Function to process detected points tlvtype=1
 
 def processDetectedPoints(byteBuffer, idX, configParameters):
+    global configFileName
+    
     # word array to convert 4 bytes to a 16 bit number
     word = [1, 2 ** 8]
     tlv_numObj = np.matmul(byteBuffer[idX:idX + 2], word)
@@ -210,6 +231,10 @@ def processDetectedPoints(byteBuffer, idX, configParameters):
     # Store the data in the detObj dictionary
     detObj = {"numObj": tlv_numObj, "rangeIdx": list(rangeIdx), "range": list(rangeVal), "dopplerIdx": list(dopplerIdx),
               "doppler": list(dopplerVal), "peakVal": list(peakVal), "x": list(x), "y": list(y), "z": list(z)}
+
+	# checking for configuration change to macro
+    check_for_macro(list(x))
+        
     dataOK = 1
     return detObj
 
