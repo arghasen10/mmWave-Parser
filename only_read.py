@@ -14,8 +14,8 @@ from dotenv import load_dotenv
 
 load_dotenv('.env')
 os_name = os.environ.get("OS")
-
-configFileName = 'all_profiles.cfg'
+framePeriodicity = 0
+configFileName = 'Configurations/micro_2fps.cfg'
 CLIport = {}
 Dataport = {}
 byteBuffer = np.zeros(2 ** 15, dtype='uint8')
@@ -78,6 +78,7 @@ def serialConfig(configFileName):
 
 # Function to parse the data inside the configuration file
 def parseConfigFile(configFileName):
+    global framePeriodicity
     configParameters = {}  # Initialize an empty dictionary to store the configuration parameters
 
     # Read the configuration file and send it to the board
@@ -112,7 +113,7 @@ def parseConfigFile(configFileName):
             chirpEndIdx = int(splitWords[2])
             numLoops = int(splitWords[3])
             numFrames = int(splitWords[4])
-            framePeriodicity = int(splitWords[5])
+            framePeriodicity = int(float(splitWords[5]))
 
     # Combine the read data to obtain the configuration parameters
     numChirpsPerFrame = (chirpEndIdx - chirpStartIdx + 1) * numLoops
@@ -365,7 +366,7 @@ def processStatistics(byteBuffer, idX):
 
 
 def readAndParseData16xx(Dataport, configParameters, filename):
-    global byteBuffer, byteBufferLength
+    global byteBuffer, byteBufferLength, framePeriodicity
     finalObj = {'Date': time.strftime('%d/%m/%Y'), 'Time': time.strftime('%H%M%S')}
     # Constants
     OBJ_STRUCT_SIZE_BYTES = 12
@@ -471,7 +472,7 @@ def readAndParseData16xx(Dataport, configParameters, filename):
             tlv_length = np.matmul(byteBuffer[idX:idX + 4], word)
             idX += 4
             print('tlv_type, idX', tlv_type, idX)
-
+            print(framePeriodicity)
             # Read the data depending on the TLV message
             if tlv_type == MMWDEMO_UART_MSG_DETECTED_POINTS:
                 detObj = processDetectedPoints(byteBuffer, idX, configParameters)
