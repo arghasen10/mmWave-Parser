@@ -11,11 +11,16 @@ import os
 import csv
 from operator import add
 from dotenv import load_dotenv
+from time import sleep
+import argparse
 
 load_dotenv('.env')
 os_name = os.environ.get("OS")
 framePeriodicity = 0
-configFileName = 'Configurations/pointcloud_configuration.cfg'
+configs = {"pointcloud": 'Configurations/pointcloud_configuration.cfg',
+           "macro": 'Configurations/macro_7fps.cfg',
+           "micro": "Configurations/micro_2fps.cfg"}
+configFileName = configs["pointcloud"]
 CLIport = {}
 Dataport = {}
 byteBuffer = np.zeros(2 ** 15, dtype='uint8')
@@ -25,7 +30,8 @@ xlin, ylin = [], []
 NUM_ANGLE_BINS = 64
 range_depth = 10
 range_width = 5
-frameCount = 0
+changes_happening = 0
+change_conf = False
 
 header = ['Date', 'Time', 'numObj', 'rangeIdx', 'range', 'dopplerIdx',
           'doppler', 'peakVal', 'x', 'y', 'z', 'rp', 'noiserp',
@@ -163,27 +169,21 @@ def reshape_rowbased(vec, rows, cols):
     return t
 
 
-def check_for_macro(x):
-    global frameCount, CLIport, Dataport, configParameters
-    # checking if 'x' is empty or not
-    if len(x) != 0:
-        frameCount += 1
-    else:
-        frameCount = 0
-    if frameCount == 30:
-        # changing configuration to macro
-        configFileName = 'Configurations/macro_7fps.cfg'
-        CLIport, Dataport = serialConfig(configFileName)
-        configParameters = parseConfigFile(configFileName)
-        frameCount = 0
+def change_conf_callback():
+    global CLIport, Dataport, configParameters, configFileName, byteBuffer, byteBufferLength
+    byteBuffer = np.zeros(2 ** 15, dtype='uint8')
+    byteBufferLength = 0
+    print('############################ changing configuration to macro ##########################')
+    time.sleep(2)
+    configFileName = 'Configurations/macro_7fps.cfg'
+    CLIport, Dataport = serialConfig(configFileName)
+    configParameters = parseConfigFile(configFileName)
 
-
-# Function to process detected points tlvtype=1
 
 def processDetectedPoints(byteBuffer, idX, configParameters):
     global configFileName
 
-    # word array to convert 4 bytes to a 16 bit number
+    # word array to convert 4 bytes to a 16-bit number
     word = [1, 2 ** 8]
     tlv_numObj = np.matmul(byteBuffer[idX:idX + 2], word)
     idX += 2
@@ -218,9 +218,6 @@ def processDetectedPoints(byteBuffer, idX, configParameters):
     dopplerIdx[dopplerIdx > (configParameters["numDopplerBins"] / 2 - 1)] = dopplerIdx[dopplerIdx > (
             configParameters["numDopplerBins"] / 2 - 1)] - 65535
     dopplerVal = dopplerIdx * configParameters["dopplerResolutionMps"]
-    # x[x > 32767] = x[x > 32767] - 65536
-    # y[y > 32767] = y[y > 32767] - 65536
-    # z[z > 32767] = z[z > 32767] - 65536
     x = x / tlv_xyzQFormat
     y = y / tlv_xyzQFormat
     z = z / tlv_xyzQFormat
@@ -228,11 +225,6 @@ def processDetectedPoints(byteBuffer, idX, configParameters):
     # Store the data in the detObj dictionary
     detObj = {"numObj": tlv_numObj, "rangeIdx": list(rangeIdx), "range": list(rangeVal), "dopplerIdx": list(dopplerIdx),
               "doppler": list(dopplerVal), "peakVal": list(peakVal), "x": list(x), "y": list(y), "z": list(z)}
-
-    # checking for configuration change to macro
-    check_for_macro(list(x))
-
-    dataOK = 1
     return detObj
 
 
@@ -361,8 +353,6 @@ def processRangeDopplerHeatMap(byteBuffer, idX):
 
 
 def processStatistics(byteBuffer, idX):
-    print('Getting called')
-    print('STarting idX: ', idX)
     word = [1, 2 ** 8, 2 ** 16, 2 ** 24]
     interFrameProcessingTime = np.matmul(byteBuffer[idX:idX + 4], word)
     idX += 4
@@ -382,13 +372,25 @@ def processStatistics(byteBuffer, idX):
                      'interFrameProcessingMargin': interFrameProcessingMargin, 'interChirpProcessingMargin':
                          interChirpProcessingMargin,
                      'activeFrameCPULoad': activeFrameCPULoad, 'interFrameCPULoad': interFrameCPULoad}
-    print(statisticsObj)
-    print('Ending idX: ', idX)
     return statisticsObj
 
 
+def buffer_flush(idX, byteBufferLength, totalPacketLen):
+    if 0 < idX < byteBufferLength:
+        shiftSize = totalPacketLen
+
+        byteBuffer[:byteBufferLength - shiftSize] = byteBuffer[shiftSize:byteBufferLength]
+        byteBuffer[byteBufferLength - shiftSize:] = np.zeros(len(byteBuffer[byteBufferLength - shiftSize:]),
+                                                             dtype='uint8')
+        byteBufferLength = byteBufferLength - shiftSize
+
+        # Check that there are no errors with the buffer length
+        if byteBufferLength < 0:
+            byteBufferLength = 0
+
+
 def readAndParseData16xx(Dataport, configParameters, filename):
-    global byteBuffer, byteBufferLength, framePeriodicity
+    global byteBuffer, byteBufferLength, framePeriodicity, changes_happening, change_conf, configFileName
     finalObj = {'Date': time.strftime('%d/%m/%Y'), 'Time': time.strftime('%H%M%S')}
     # Constants
     OBJ_STRUCT_SIZE_BYTES = 12
@@ -444,7 +446,7 @@ def readAndParseData16xx(Dataport, configParameters, filename):
             if byteBufferLength < 0:
                 byteBufferLength = 0
 
-            # word array to convert 4 bytes to a 32 bit number
+            # word array to convert 4 bytes to a 32-bit number
             word = [1, 2 ** 8, 2 ** 16, 2 ** 24]
 
             # Read the total packet length
@@ -456,8 +458,7 @@ def readAndParseData16xx(Dataport, configParameters, filename):
 
     # If magicOK is equal to 1 then process the message
     if magicOK:
-
-        # word array to convert 4 bytes to a 32 bit number
+        # word array to convert 4 bytes to a 32-bit number
         word = [1, 2 ** 8, 2 ** 16, 2 ** 24]
 
         # Initialize the pointer index
@@ -493,8 +494,6 @@ def readAndParseData16xx(Dataport, configParameters, filename):
             idX += 4
             tlv_length = np.matmul(byteBuffer[idX:idX + 4], word)
             idX += 4
-            print('tlv_type, idX', tlv_type, idX)
-            print(framePeriodicity)
             # Read the data depending on the TLV message
             if tlv_type == MMWDEMO_UART_MSG_DETECTED_POINTS:
                 detObj = processDetectedPoints(byteBuffer, idX, configParameters)
@@ -537,41 +536,50 @@ def readAndParseData16xx(Dataport, configParameters, filename):
     return dataOK, frameNumber, finalObj
 
 
+def parseArg():
+    parser = argparse.ArgumentParser(description='Change Configuration')
+    parser.add_argument('--conf', help='Select configuratino file', default="pointcloud",
+                        choices=["pointcloud", "macro", "micro"])
+    args = parser.parse_args()
+    return args
+
+
 # -------------------------    MAIN   -----------------------------------------
 
 # Configurate the serial port
-CLIport, Dataport = serialConfig(configFileName)
+if __name__ == "__main__":
+    args = parseArg()
+    configFileName = configs[args.conf]
+    CLIport, Dataport = serialConfig(configFileName)
+    # Get the configuration parameters from the configuration file
+    configParameters = parseConfigFile(configFileName)
 
-# Get the configuration parameters from the configuration file
-configParameters = parseConfigFile(configFileName)
+    # Main loop
+    detObj = {}
+    frameData = {}
+    currentIndex = 0
+    filename = file_create()
 
-# Main loop
-detObj = {}
-frameData = {}
-currentIndex = 0
-filename = file_create()
+    linecounter = 0
 
-linecounter = 0
+    while True:
+        linecounter += 1
+        if linecounter > 1000000000:
+            linecounter = 0
+            filename = file_create()
 
-while True:
-    linecounter += 1
-    if linecounter > 1000000000:
-        linecounter = 0
-        filename = file_create()
+        try:
+            dataOk, frameNumber, finalObj = readAndParseData16xx(Dataport, configParameters, filename)
+            if dataOk:
+                # Store the current frame into frameData
+                print(finalObj)
+                currentIndex += 1
 
-    try:
-        dataOk, frameNumber, finalObj = readAndParseData16xx(Dataport, configParameters, filename)
-        if dataOk:
-            # Store the current frame into frameData
-            print(finalObj)
-            frameData[currentIndex] = finalObj
-            currentIndex += 1
+            # time.sleep(0.03)  # Sampling frequency of 30 Hz
 
-        # time.sleep(0.03)  # Sampling frequency of 30 Hz
-
-    # Stop the program and close everything if Ctrl + c is pressed
-    except KeyboardInterrupt:
-        CLIport.write('sensorStop\n'.encode())
-        CLIport.close()
-        Dataport.close()
-        break
+        # Stop the program and close everything if Ctrl + c is pressed
+        except KeyboardInterrupt:
+            CLIport.write('sensorStop\n'.encode())
+            CLIport.close()
+            Dataport.close()
+            break
