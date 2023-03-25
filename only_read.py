@@ -21,8 +21,8 @@ configs = {"pointcloud": 'Configurations/pointcloud_configuration.cfg',
            "macro": 'Configurations/macro_7fps.cfg',
            "micro": "Configurations/micro_2fps.cfg"}
 configFileName = configs["pointcloud"]
-CLIport = {}
-Dataport = {}
+# CLIport = {}
+# Dataport = {}
 byteBuffer = np.zeros(2 ** 15, dtype='uint8')
 byteBufferLength = 0
 rangeAzimuthHeatMapGridInit = 0

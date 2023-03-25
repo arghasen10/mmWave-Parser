@@ -1,0 +1,18 @@
+[tool.pdm]
+
+[project]
+name = ""
+version = ""
+description = ""
+authors = [{ name = "Aritra Sen", email = "aretrosen@proton.me" }]
+dependencies = [
+    "matplotlib>=3.7.1",
+    "python-dotenv>=1.0.0",
+    "pyserial>=3.5",
+    "pandas>=1.5.3",
+]
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+[tool.pyright]
+extraPaths = ["__pypackages__/3.10/lib/"]
