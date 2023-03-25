@@ -118,10 +118,10 @@ class ConfigureFrame(ttk.Frame):
         ttk.Label(setup, text="Desirable Configuration").grid(
             row=3, column=0, sticky=tk.W
         )
-        self._desirable_conf = tk.StringVar(value="Best Range Resolution")
+        self._subprofile_type = tk.StringVar(value="Best Range Resolution")
         ttk.Combobox(
             setup,
-            textvariable=self._desirable_conf,
+            textvariable=self._subprofile_type,
             values=("Best Range Resolution", "Best Velocity Resolution", "Best Range"),
             state="readonly",
         ).grid(row=3, column=1, sticky=tk.EW)
@@ -143,15 +143,15 @@ class ConfigureFrame(ttk.Frame):
         scene.columnconfigure(2, weight=1)
 
         ttk.Label(scene, text="Frame Rate (fps)").grid(row=0, column=0, sticky=tk.W)
-        self._fps_val = tk.IntVar(value=10)
-        _cur_fps_val = ttk.Label(scene, text=f"{self._fps_val.get():02}")
+        self._frame_rate = tk.IntVar(value=10)
+        _cur_fps_val = ttk.Label(scene, text=f"{self._frame_rate.get():02}")
         _cur_fps_val.grid(row=0, column=2)
         ttk.Scale(
             scene,
             from_=1,
             to=30,
-            variable=self._fps_val,
-            command=lambda _: _cur_fps_val.configure(text=f"{self._fps_val.get():02}"),
+            variable=self._frame_rate,
+            command=lambda _: _cur_fps_val.configure(text=f"{self._frame_rate.get():02}"),
         ).grid(row=0, column=1, sticky=tk.EW)
 
         ttk.Label(scene, text="Range resolution (m)").grid(row=1, column=0, sticky=tk.W)
