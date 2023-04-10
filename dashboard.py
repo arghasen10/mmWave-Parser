@@ -5,7 +5,8 @@ from tkinter import ttk
 import numpy as np
 import seaborn as sns
 from matplotlib.animation import FuncAnimation
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
+                                               NavigationToolbar2Tk)
 from matplotlib.figure import Figure
 from ttkthemes import ThemedTk
 
@@ -151,7 +152,9 @@ class ConfigureFrame(ttk.Frame):
             from_=1,
             to=30,
             variable=self._frame_rate,
-            command=lambda _: _cur_fps_val.configure(text=f"{self._frame_rate.get():02}"),
+            command=lambda _: _cur_fps_val.configure(
+                text=f"{self._frame_rate.get():02}"
+            ),
         ).grid(row=0, column=1, sticky=tk.EW)
 
         ttk.Label(scene, text="Range resolution (m)").grid(row=1, column=0, sticky=tk.W)
