@@ -30,6 +30,15 @@ class Transform:
             'lines': [],
         }
 
+    def toLabels(self, nums, p):
+        return ', '.join([f'{v:.{p}f}' if p else str(v) for i, v in enumerate(nums)])
+
+    def toCeil(self, x, p):
+        return round((x + 0.5) / 10**p, p)
+
+    def toFloor(self, x, p):
+        return round((x - 0.5) / 10**p, p)
+
     def isRR(self):
         return self.Input["subprofile_type"] == "best_range_res"
 
@@ -134,6 +143,135 @@ class Transform:
             self.Input["Range_Sensitivity"] = self.convertSensitivityLinearTodB(
                 5000, self.Input["platform"], 8
             )
+
+    def setSliderRange(self, widget, minVal, maxVal):
+        # work around slider bug
+        if maxVal < widget.minValue:
+            widget.minValue = minVal
+            widget.maxValue = maxVal
+        else:
+            widget.maxValue = maxVal
+            widget.minValue = minVal
+
+    def rangeResolutionConstraints1(self, lightSpeed, totalBw, rampSlopeLo, rampSlopeHi, chirpStartTime, chirpEndTime):
+        # for RR
+        rangeResLo = round(lightSpeed / (2 * (totalBw - rampSlopeLo * (chirpStartTime + chirpEndTime))), 3)
+        rangeResHi = round(lightSpeed / (2 * (totalBw - rampSlopeHi * (chirpStartTime + chirpEndTime))), 3)
+
+        setSliderRange(
+            templateObj.tiWidgetSliderRangeResolution,
+            rampSlopeLo,
+            rampSlopeHi
+        )
+        templateObj.tiWidgetSliderRangeResolution.increment = 5
+        templateObj.tiWidgetSliderRangeResolution.labels = toLabels([
+            rangeResLo,
+            rangeResHi,
+        ])
+
+    def rangeResolutionConstraints2(self, lightSpeed, sweepBw, minBandwidth, maxBandwidth):
+        # for VR
+        #var tmp = round( lightSpeed / ( 2* ( total_bw - ramp_slope * (chirp_start_time + chirp_end_time) ) ), 3);
+        rangeResLo = round(lightSpeed / (2 * sweepBw), 3)
+        rangeResHi = round(lightSpeed / (2 * sweepBw), 3)
+
+        setSliderRange(
+            templateObj.tiWidgetSliderRangeResolution,
+            minBandwidth,
+            maxBandwidth
+        )
+        templateObj.tiWidgetSliderRangeResolution.increment = 0.5
+        #templateObj.ti_widget_slider_range_resolution.labels = MyUtil.toLabels([range_res_lo, range_res_hi]);
+        templateObj.tiWidgetSliderRangeResolution.labels = toLabels([
+            "coarse",
+            "fine",
+        ])
+
+    def rangeResolutionConstraints3(self, maximumRange, adcSamplesLo, maxNumAdcSamples):
+        # for best range
+        rangeResLo = round(maximumRange / (0.8 * maxNumAdcSamples), 3)
+        rangeResHi = round(maximumRange / (0.8 * adcSamplesLo), 3)
+
+        if adcSamplesLo == maxNumAdcSamples:
+            maxNumAdcSamples = maxNumAdcSamples + 1  # hack
+
+        setSliderRange(
+            templateObj.tiWidgetSliderRangeResolution,
+            adcSamplesLo,
+            maxNumAdcSamples
+        )
+        templateObj.tiWidgetSliderRangeResolution.increment = 16
+        templateObj.tiWidgetSliderRangeResolution.labels = toLabels([
+            rangeResHi,
+            rangeResLo,
+        ])
+
+    def maxRangeConstraints1(self, maxRangeLo, maxRangeHi, inc):
+        # for RR, best range
+        if maxRangeLo + inc > maxRangeHi:
+            maxRangeHi = maxRangeLo
+
+        templateObj.tiWidgetSliderMaxRange.labels = toLabels([
+            maxRangeLo,
+            maxRangeHi,
+        ])
+        setSliderRange(
+            templateObj.tiWidgetSliderMaxRange,
+            maxRangeLo,
+            maxRangeHi
+        )
+        templateObj.tiWidgetSliderMaxRange.increment = inc
+
+    def maxRangeConstraints2(self,max_range_lo, max_range_hi, adc_samples_lo, max_num_adc_samples):
+        # for VR
+        #templateObj.ti_widget_slider_max_range.labels = MyUtil.toLabels([max_range_lo, max_range_hi]);
+        setSliderRange(templateObj.ti_widget_slider_max_range, adc_samples_lo, max_num_adc_samples)
+        templateObj.ti_widget_slider_max_range.increment = 16
+        templateObj.ti_widget_slider_max_range.labels = toLabels(["min", "max"])
+
+    def radialVelocityConstraints1(self, max_radial_vel_lo, max_radial_vel_hi, inc):
+        # for RR, best range
+        templateObj.ti_widget_slider_max_radial_vel.labels = toLabels([max_radial_vel_lo, max_radial_vel_hi])
+        setSliderRange(templateObj.ti_widget_slider_max_radial_vel, max_radial_vel_lo, max_radial_vel_hi)
+        templateObj.ti_widget_slider_max_radial_vel.increment = inc
+
+    def radialVelocityConstraints2(self, max_radial_vel_lo, max_radial_vel_hi, N_fft2d_lo, N_fft2d_hi):
+        # for VR
+        lo = math.log2(N_fft2d_lo)
+        hi = math.log2(N_fft2d_hi)
+        templateObj.ti_widget_slider_max_radial_vel.labels = toLabels([max_radial_vel_lo, max_radial_vel_hi])
+        setSliderRange(templateObj.ti_widget_slider_max_radial_vel, lo, hi)
+        templateObj.ti_widget_slider_max_radial_vel.increment = 1
+
+    def velocityResolutionConstraints1(self, max_number_of_chirps, Number_of_TX, N_fft2d_lo, Maximum_radial_velocity, Doppler_FFT_size):
+        # for RR, best range
+        radial_vel_res_values = []
+        radial_vel_res_labels = []
+        tmp = max_number_of_chirps / Number_of_TX
+        while tmp >= N_fft2d_lo:
+            radial_vel_res_values.append(tmp)
+            radial_vel_res_labels.append(toCeil(Maximum_radial_velocity / (tmp / 2), 2))
+            tmp = tmp >> 1
+        templateObj.ti_widget_droplist_radial_vel_resolution.disabled = False
+        templateObj.ti_widget_droplist_radial_vel_resolution.values = "|".join(str(x) for x in radial_vel_res_values)
+        templateObj.ti_widget_droplist_radial_vel_resolution.labels = "|".join(str(x) for x in radial_vel_res_labels)
+
+        # hack
+        value = int(templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue, 10)
+        if math.isnan(value) == True:
+            value = Doppler_FFT_size
+        idx = radial_vel_res_values.index(value) if value in radial_vel_res_values else -1
+        if idx >= 0:
+            if templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue != radial_vel_res_values[idx]:
+                templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue = radial_vel_res_values[idx]
+        else:
+            templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue = radial_vel_res_values[0] if len(radial_vel_res_values) > 0 else None
+
+    def velocityResolutionConstraints2(self, radial_velocity_resolution):
+        # for VR
+        templateObj.ti_widget_droplist_radial_vel_resolution.disabled = True
+        templateObj.ti_widget_droplist_radial_vel_resolution.labels = str(radial_velocity_resolution)
+        templateObj.ti_widget_droplist_radial_vel_resolution.selectedIndex = 0
 
     def updateInput(self, changes):
         for k in changes:
@@ -309,14 +447,14 @@ class Transform:
                 ),
             )
             self.Input["Max_Slope"] = math.floor(self.Input["Max_Slope"] / 5) * 5
-            # rangeResolutionConstraints1(
-            #     self.Input["lightSpeed"],
-            #     self.Input["Total_BW"],
-            #     self.Input["min_Ramp_Slope"],
-            #     self.Input["Max_Slope"],
-            #     self.Input["Chirp_Start_Time"],
-            #     self.Input["Chirp_end_guard_time"],
-            # )
+            rangeResolutionConstraints1(
+                self.Input["lightSpeed"],
+                self.Input["Total_BW"],
+                self.Input["min_Ramp_Slope"],
+                self.Input["Max_Slope"],
+                self.Input["Chirp_Start_Time"],
+                self.Input["Chirp_end_guard_time"],
+            )
         elif self.Input["subprofile_type"] == "best_vel_res":
             if not self.Input["Bandwidth"]:
                 self.Input["Bandwidth"] = 0.5  # preset
@@ -343,7 +481,7 @@ class Transform:
         )
 
         if self.Input["subprofile_type"] == "best_vel_res":
-            self.Input["Radial_velocity_Resolution"] = round(
+            self.Input["Radial_velocity_Resolution"] = toCeil(
                 self.Input["lightSpeed"]
                 / (self.Input["Frequency_band"] * self.Input["Frame_duration"]),
                 2,
@@ -402,7 +540,7 @@ class Transform:
                 3,
             )
             ramp_slope2 = (
-                math.ceil(
+                toCeil(
                     (
                         self.Input["Max_Allowable_Bandwidth"] * 1000
                         - (
@@ -415,10 +553,8 @@ class Transform:
                     / (
                         self.Input["Chirp_Start_Time"]
                         + self.Input["Chirp_end_guard_time"]
-                    )
-                    * 1000
+                    ), 3
                 )
-                / 1000
             )
             if ramp_slope2 <= 0:
                 ramp_slope2 = ramp_slope1
@@ -443,12 +579,11 @@ class Transform:
                 self.Input["lightSpeed"] / (2 * self.Input["Sweep_BW"]), 3
             )
             self.Input["ADC_Sampling_Rate"] = (
-                math.floor(
+                toFloor(
                     (self.Input["Ramp_Slope"] * self.Input["Num_ADC_Samples"])
                     / self.Input["Sweep_BW"],
-                    *1000,
+                    3
                 )
-                / 1000
             )
             self.Input["Range_FFT_size"] = 1 << math.ceil(
                 math.log2(self.Input["Num_ADC_Samples"])
@@ -464,12 +599,11 @@ class Transform:
                 2,
             )
             self.Input["ADC_Sampling_Rate"] = (
-                math.floor(
+                toFloor(
                     (2 * self.Input["Ramp_Slope"] * self.Input["Maximum_range"])
                     / (self.Input["lightSpeed"] * 0.8),
-                    *1000,
+                    3
                 )
-                / 1000
             )
             self.Input["Total_BW"] = (
                 self.Input["Chirp_duration"] * self.Input["Ramp_Slope"]
@@ -557,7 +691,7 @@ class Transform:
         ) * 1000 - self.Input["Chirp_duration"]
         idleTime_hi = 5242.87
         self.Input["max_inter_chirp_duration"] = (
-            math.floor(min(max_inter_chirp_duration1, idleTime_hi) * 100) / 100
+            toFloor(min(max_inter_chirp_duration1, idleTime_hi), 2)
         )
         N_fft1d_max1 = None
         adc_samples_lo_calc = adc_samples_lo
@@ -751,13 +885,12 @@ class Transform:
         # Input.Maximum_range; # directly from widget for RR, best range
         if self.Input["subprofile_type"] == "best_vel_res":
             self.Input["Maximum_range"] = (
-                math.floor(
+                toFloor(
                     0.8
                     * self.Input["Range_Resolution"]
                     * self.Input["Num_ADC_Samples"]
-                    * 100
+                        ,2
                 )
-                / 100
             )  # VR sheet # Winnie's bug : Note Math.floor() only takes 1 arg. Use MyUtil.toFloor(n, p)
 
         self.Input["min_Bandwidth"] = self.Input["Min_Allowable_Bandwidth"]
@@ -775,9 +908,8 @@ class Transform:
                 ):
                     self.Input["Num_ADC_Samples"] = adc_samples_lo_calc
                 self.Input["Maximum_range"] = (
-                    math.floor(0.8 * self.Input["Range_Resolution"] * 100)
-                    * self.Input["Num_ADC_Samples"]
-                    / 100
+                    toFloor(0.8 * self.Input["Range_Resolution"])
+                    * self.Input["Num_ADC_Samples"], 2
                 )
             else:
                 # ]
@@ -786,12 +918,10 @@ class Transform:
                     / (0.8 * self.Input["Range_Resolution"] * 16)
                 )  # but range sheet: range resolution widget selects num adc samples directly
             self.Input["ADC_Sampling_Rate"] = (
-                math.floor(
+                toFloor(
                     (self.Input["Ramp_Slope"] * self.Input["Num_ADC_Samples"])
-                    / self.Input["Sweep_BW"]
-                    * 1000
+                    / self.Input["Sweep_BW"], 3
                 )
-                / 1000
             )  # RR,VR
             self.Input["Range_FFT_size"] = 1 << math.ceil(
                 math.log2(self.Input["Num_ADC_Samples"])
@@ -825,27 +955,27 @@ class Transform:
             0.8 * self.Input["Range_Resolution"] * adc_samples_lo_calc, 2
         )
 
+        RangeIncrements = 0.01
         if self.Input["subprofile_type"] == "best_range_res":
-            RangeIncrements = 0.01
             if self.Input["platform"] in [Platform.xWR16xx, Platform.xWR18xx]:
                 # "16" is due to the limitation on ADC samples in the demo
                 RangeIncrements = toCeil(0.8 * self.Input["Range_Resolution"] * 16, 2)
-            # maxRangeConstraints1(
-            #     self.Input["Range_low"], self.Input["Range_high"], RangeIncrements
-            # )
+            maxRangeConstraints1(
+                self.Input["Range_low"], self.Input["Range_high"], RangeIncrements
+            )
         elif self.Input["subprofile_type"] == "best_vel_res":
-            # rangeResolutionConstraints2(
-            #     self.Input["lightSpeed"],
-            #     self.Input["Sweep_BW"],
-            #     self.Input["min_Bandwidth"],
-            #     self.Input["max_Bandwidth"],
-            # )
-            # maxRangeConstraints2(
-            #     self.Input["Range_low"],
-            #     self.Input["Range_high"],
-            #     adc_samples_lo,
-            #     self.Input["max_num_adc_samples"],
-            # )
+            rangeResolutionConstraints2(
+                self.Input["lightSpeed"],
+                self.Input["Sweep_BW"],
+                self.Input["min_Bandwidth"],
+                self.Input["max_Bandwidth"],
+            )
+            maxRangeConstraints2(
+                self.Input["Range_low"],
+                self.Input["Range_high"],
+                adc_samples_lo,
+                self.Input["max_num_adc_samples"],
+            )
             pass
         elif self.Input["subprofile_type"] == "best_range":
             lo = self.Input["Maximum_range_list"][0]
@@ -857,6 +987,12 @@ class Transform:
             inc = (
                 self.Input["Maximum_range_list"][1]
                 - self.Input["Maximum_range_list"][0]
+            )
+            maxRangeConstraints1(lo, hi, inc);
+            rangeResolutionConstraints3(
+                self.Input["Maximum_range"],
+                adc_samples_lo,
+                self.Input["max_num_adc_samples"]
             )
 
         self.Input["Wavelength"] = (
@@ -912,7 +1048,7 @@ class Transform:
             3,
         )
 
-        self.Input["Single_chirp_time"] = MyUtil.toPrecision(
+        self.Input["Single_chirp_time"] = round(
             self.Input["Total_BW"] + self.Input["Inter_chirp_duration"], 2
         )
 
@@ -985,7 +1121,7 @@ class Transform:
                 self.Input["Maximum_radial_velocity"],
                 self.Input["Doppler_FFT_size"]
             ) #RR, best range
-        # valueN2d = int(templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue)
+        valueN2d = int(templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue)
         if not isnan(valueN2d):
             self.Input["N_fft2d"] = valueN2d
         if self.Input["N_fft2d"]:
@@ -999,7 +1135,7 @@ class Transform:
             )
         elif self.Input["subprofile_type"] == "best_vel_res":
         #radial_velocity_resolution
-        velocityResolutionConstraints2(self.Input["Radial_velocity_Resolution"])
+            velocityResolutionConstraints2(self.Input["Radial_velocity_Resolution"])
 
 #TODO?
         brief(self.Input) # We need to update the labels after this
