@@ -19,19 +19,19 @@ class Transform:
         }
 
         self.P = {
-            'channelCfg': {},
-            'adcCfg': {},
-            'dataFmt': {},
-            'profileCfg': {},
-            'chirpCfg': [],
-            'frameCfg': {},
-            'guiMonitor': {},
-            'clutterRemoval': {},
-            'lines': [],
+            "channelCfg": {},
+            "adcCfg": {},
+            "dataFmt": {},
+            "profileCfg": {},
+            "chirpCfg": [],
+            "frameCfg": {},
+            "guiMonitor": {},
+            "clutterRemoval": {},
+            "lines": [],
         }
 
     def toLabels(self, nums, p):
-        return ', '.join([f'{v:.{p}f}' if p else str(v) for i, v in enumerate(nums)])
+        return ", ".join([f"{v:.{p}f}" if p else str(v) for i, v in enumerate(nums)])
 
     def toCeil(self, x, p):
         return round((x + 0.5) / 10**p, p)
@@ -153,39 +153,57 @@ class Transform:
             widget.maxValue = maxVal
             widget.minValue = minVal
 
-    def rangeResolutionConstraints1(self, lightSpeed, totalBw, rampSlopeLo, rampSlopeHi, chirpStartTime, chirpEndTime):
+    def rangeResolutionConstraints1(
+        self,
+        lightSpeed,
+        totalBw,
+        rampSlopeLo,
+        rampSlopeHi,
+        chirpStartTime,
+        chirpEndTime,
+    ):
         # for RR
-        rangeResLo = round(lightSpeed / (2 * (totalBw - rampSlopeLo * (chirpStartTime + chirpEndTime))), 3)
-        rangeResHi = round(lightSpeed / (2 * (totalBw - rampSlopeHi * (chirpStartTime + chirpEndTime))), 3)
+        rangeResLo = round(
+            lightSpeed
+            / (2 * (totalBw - rampSlopeLo * (chirpStartTime + chirpEndTime))),
+            3,
+        )
+        rangeResHi = round(
+            lightSpeed
+            / (2 * (totalBw - rampSlopeHi * (chirpStartTime + chirpEndTime))),
+            3,
+        )
 
-        setSliderRange(
-            templateObj.tiWidgetSliderRangeResolution,
-            rampSlopeLo,
-            rampSlopeHi
+        self.setSliderRange(
+            templateObj.tiWidgetSliderRangeResolution, rampSlopeLo, rampSlopeHi
         )
         templateObj.tiWidgetSliderRangeResolution.increment = 5
-        templateObj.tiWidgetSliderRangeResolution.labels = toLabels([
-            rangeResLo,
-            rangeResHi,
-        ])
+        templateObj.tiWidgetSliderRangeResolution.labels = self.toLabels(
+            [
+                rangeResLo,
+                rangeResHi,
+            ]
+        )
 
-    def rangeResolutionConstraints2(self, lightSpeed, sweepBw, minBandwidth, maxBandwidth):
+    def rangeResolutionConstraints2(
+        self, lightSpeed, sweepBw, minBandwidth, maxBandwidth
+    ):
         # for VR
-        #var tmp = round( lightSpeed / ( 2* ( total_bw - ramp_slope * (chirp_start_time + chirp_end_time) ) ), 3);
+        # var tmp = round( lightSpeed / ( 2* ( total_bw - ramp_slope * (chirp_start_time + chirp_end_time) ) ), 3);
         rangeResLo = round(lightSpeed / (2 * sweepBw), 3)
         rangeResHi = round(lightSpeed / (2 * sweepBw), 3)
 
-        setSliderRange(
-            templateObj.tiWidgetSliderRangeResolution,
-            minBandwidth,
-            maxBandwidth
+        self.setSliderRange(
+            templateObj.tiWidgetSliderRangeResolution, minBandwidth, maxBandwidth
         )
         templateObj.tiWidgetSliderRangeResolution.increment = 0.5
-        #templateObj.ti_widget_slider_range_resolution.labels = MyUtil.toLabels([range_res_lo, range_res_hi]);
-        templateObj.tiWidgetSliderRangeResolution.labels = toLabels([
-            "coarse",
-            "fine",
-        ])
+        # templateObj.ti_widget_slider_range_resolution.labels = self.toLabels([range_res_lo, range_res_hi]);
+        templateObj.tiWidgetSliderRangeResolution.labels = self.toLabels(
+            [
+                "coarse",
+                "fine",
+            ]
+        )
 
     def rangeResolutionConstraints3(self, maximumRange, adcSamplesLo, maxNumAdcSamples):
         # for best range
@@ -195,82 +213,120 @@ class Transform:
         if adcSamplesLo == maxNumAdcSamples:
             maxNumAdcSamples = maxNumAdcSamples + 1  # hack
 
-        setSliderRange(
-            templateObj.tiWidgetSliderRangeResolution,
-            adcSamplesLo,
-            maxNumAdcSamples
+        self.setSliderRange(
+            templateObj.tiWidgetSliderRangeResolution, adcSamplesLo, maxNumAdcSamples
         )
         templateObj.tiWidgetSliderRangeResolution.increment = 16
-        templateObj.tiWidgetSliderRangeResolution.labels = toLabels([
-            rangeResHi,
-            rangeResLo,
-        ])
+        templateObj.tiWidgetSliderRangeResolution.labels = self.toLabels(
+            [
+                rangeResHi,
+                rangeResLo,
+            ]
+        )
 
     def maxRangeConstraints1(self, maxRangeLo, maxRangeHi, inc):
         # for RR, best range
         if maxRangeLo + inc > maxRangeHi:
             maxRangeHi = maxRangeLo
 
-        templateObj.tiWidgetSliderMaxRange.labels = toLabels([
-            maxRangeLo,
-            maxRangeHi,
-        ])
-        setSliderRange(
-            templateObj.tiWidgetSliderMaxRange,
-            maxRangeLo,
-            maxRangeHi
+        templateObj.tiWidgetSliderMaxRange.labels = self.toLabels(
+            [
+                maxRangeLo,
+                maxRangeHi,
+            ]
         )
+        self.setSliderRange(templateObj.tiWidgetSliderMaxRange, maxRangeLo, maxRangeHi)
         templateObj.tiWidgetSliderMaxRange.increment = inc
 
-    def maxRangeConstraints2(self,max_range_lo, max_range_hi, adc_samples_lo, max_num_adc_samples):
+    def maxRangeConstraints2(
+        self, max_range_lo, max_range_hi, adc_samples_lo, max_num_adc_samples
+    ):
         # for VR
-        #templateObj.ti_widget_slider_max_range.labels = MyUtil.toLabels([max_range_lo, max_range_hi]);
-        setSliderRange(templateObj.ti_widget_slider_max_range, adc_samples_lo, max_num_adc_samples)
+        # templateObj.ti_widget_slider_max_range.labels = self.toLabels([max_range_lo, max_range_hi]);
+        self.setSliderRange(
+            templateObj.ti_widget_slider_max_range, adc_samples_lo, max_num_adc_samples
+        )
         templateObj.ti_widget_slider_max_range.increment = 16
-        templateObj.ti_widget_slider_max_range.labels = toLabels(["min", "max"])
+        templateObj.ti_widget_slider_max_range.labels = self.toLabels(["min", "max"])
 
     def radialVelocityConstraints1(self, max_radial_vel_lo, max_radial_vel_hi, inc):
         # for RR, best range
-        templateObj.ti_widget_slider_max_radial_vel.labels = toLabels([max_radial_vel_lo, max_radial_vel_hi])
-        setSliderRange(templateObj.ti_widget_slider_max_radial_vel, max_radial_vel_lo, max_radial_vel_hi)
+        templateObj.ti_widget_slider_max_radial_vel.labels = self.toLabels(
+            [max_radial_vel_lo, max_radial_vel_hi]
+        )
+        self.setSliderRange(
+            templateObj.ti_widget_slider_max_radial_vel,
+            max_radial_vel_lo,
+            max_radial_vel_hi,
+        )
         templateObj.ti_widget_slider_max_radial_vel.increment = inc
 
-    def radialVelocityConstraints2(self, max_radial_vel_lo, max_radial_vel_hi, N_fft2d_lo, N_fft2d_hi):
+    def radialVelocityConstraints2(
+        self, max_radial_vel_lo, max_radial_vel_hi, N_fft2d_lo, N_fft2d_hi
+    ):
         # for VR
         lo = math.log2(N_fft2d_lo)
         hi = math.log2(N_fft2d_hi)
-        templateObj.ti_widget_slider_max_radial_vel.labels = toLabels([max_radial_vel_lo, max_radial_vel_hi])
-        setSliderRange(templateObj.ti_widget_slider_max_radial_vel, lo, hi)
+        templateObj.ti_widget_slider_max_radial_vel.labels = self.toLabels(
+            [max_radial_vel_lo, max_radial_vel_hi]
+        )
+        self.setSliderRange(templateObj.ti_widget_slider_max_radial_vel, lo, hi)
         templateObj.ti_widget_slider_max_radial_vel.increment = 1
 
-    def velocityResolutionConstraints1(self, max_number_of_chirps, Number_of_TX, N_fft2d_lo, Maximum_radial_velocity, Doppler_FFT_size):
+    def velocityResolutionConstraints1(
+        self,
+        max_number_of_chirps,
+        Number_of_TX,
+        N_fft2d_lo,
+        Maximum_radial_velocity,
+        Doppler_FFT_size,
+    ):
         # for RR, best range
         radial_vel_res_values = []
         radial_vel_res_labels = []
         tmp = max_number_of_chirps / Number_of_TX
         while tmp >= N_fft2d_lo:
             radial_vel_res_values.append(tmp)
-            radial_vel_res_labels.append(toCeil(Maximum_radial_velocity / (tmp / 2), 2))
+            radial_vel_res_labels.append(
+                self.toCeil(Maximum_radial_velocity / (tmp / 2), 2)
+            )
             tmp = tmp >> 1
         templateObj.ti_widget_droplist_radial_vel_resolution.disabled = False
-        templateObj.ti_widget_droplist_radial_vel_resolution.values = "|".join(str(x) for x in radial_vel_res_values)
-        templateObj.ti_widget_droplist_radial_vel_resolution.labels = "|".join(str(x) for x in radial_vel_res_labels)
+        templateObj.ti_widget_droplist_radial_vel_resolution.values = "|".join(
+            str(x) for x in radial_vel_res_values
+        )
+        templateObj.ti_widget_droplist_radial_vel_resolution.labels = "|".join(
+            str(x) for x in radial_vel_res_labels
+        )
 
         # hack
-        value = int(templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue, 10)
+        value = int(
+            templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue, 10
+        )
         if math.isnan(value) == True:
             value = Doppler_FFT_size
-        idx = radial_vel_res_values.index(value) if value in radial_vel_res_values else -1
+        idx = (
+            radial_vel_res_values.index(value) if value in radial_vel_res_values else -1
+        )
         if idx >= 0:
-            if templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue != radial_vel_res_values[idx]:
-                templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue = radial_vel_res_values[idx]
+            if (
+                templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue
+                != radial_vel_res_values[idx]
+            ):
+                templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue = (
+                    radial_vel_res_values[idx]
+                )
         else:
-            templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue = radial_vel_res_values[0] if len(radial_vel_res_values) > 0 else None
+            templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue = (
+                radial_vel_res_values[0] if len(radial_vel_res_values) > 0 else None
+            )
 
     def velocityResolutionConstraints2(self, radial_velocity_resolution):
         # for VR
         templateObj.ti_widget_droplist_radial_vel_resolution.disabled = True
-        templateObj.ti_widget_droplist_radial_vel_resolution.labels = str(radial_velocity_resolution)
+        templateObj.ti_widget_droplist_radial_vel_resolution.labels = str(
+            radial_velocity_resolution
+        )
         templateObj.ti_widget_droplist_radial_vel_resolution.selectedIndex = 0
 
     def updateInput(self, changes):
@@ -447,7 +503,7 @@ class Transform:
                 ),
             )
             self.Input["Max_Slope"] = math.floor(self.Input["Max_Slope"] / 5) * 5
-            rangeResolutionConstraints1(
+            self.rangeResolutionConstraints1(
                 self.Input["lightSpeed"],
                 self.Input["Total_BW"],
                 self.Input["min_Ramp_Slope"],
@@ -481,7 +537,7 @@ class Transform:
         )
 
         if self.Input["subprofile_type"] == "best_vel_res":
-            self.Input["Radial_velocity_Resolution"] = toCeil(
+            self.Input["Radial_velocity_Resolution"] = self.toCeil(
                 self.Input["lightSpeed"]
                 / (self.Input["Frequency_band"] * self.Input["Frame_duration"]),
                 2,
@@ -539,22 +595,14 @@ class Transform:
                 / (2 * self.Input["Maximum_range"]),
                 3,
             )
-            ramp_slope2 = (
-                toCeil(
-                    (
-                        self.Input["Max_Allowable_Bandwidth"] * 1000
-                        - (
-                            self.Input["lightSpeed"]
-                            * 0.8
-                            * self.Input["Num_ADC_Samples"]
-                        )
-                        / (2 * self.Input["Maximum_range"])
-                    )
-                    / (
-                        self.Input["Chirp_Start_Time"]
-                        + self.Input["Chirp_end_guard_time"]
-                    ), 3
+            ramp_slope2 = self.toCeil(
+                (
+                    self.Input["Max_Allowable_Bandwidth"] * 1000
+                    - (self.Input["lightSpeed"] * 0.8 * self.Input["Num_ADC_Samples"])
+                    / (2 * self.Input["Maximum_range"])
                 )
+                / (self.Input["Chirp_Start_Time"] + self.Input["Chirp_end_guard_time"]),
+                3,
             )
             if ramp_slope2 <= 0:
                 ramp_slope2 = ramp_slope1
@@ -578,12 +626,10 @@ class Transform:
             self.Input["Range_Resolution"] = round(
                 self.Input["lightSpeed"] / (2 * self.Input["Sweep_BW"]), 3
             )
-            self.Input["ADC_Sampling_Rate"] = (
-                toFloor(
-                    (self.Input["Ramp_Slope"] * self.Input["Num_ADC_Samples"])
-                    / self.Input["Sweep_BW"],
-                    3
-                )
+            self.Input["ADC_Sampling_Rate"] = self.toFloor(
+                (self.Input["Ramp_Slope"] * self.Input["Num_ADC_Samples"])
+                / self.Input["Sweep_BW"],
+                3,
             )
             self.Input["Range_FFT_size"] = 1 << math.ceil(
                 math.log2(self.Input["Num_ADC_Samples"])
@@ -598,12 +644,10 @@ class Transform:
                 + self.Input["Chirp_Start_Time"],
                 2,
             )
-            self.Input["ADC_Sampling_Rate"] = (
-                toFloor(
-                    (2 * self.Input["Ramp_Slope"] * self.Input["Maximum_range"])
-                    / (self.Input["lightSpeed"] * 0.8),
-                    3
-                )
+            self.Input["ADC_Sampling_Rate"] = self.toFloor(
+                (2 * self.Input["Ramp_Slope"] * self.Input["Maximum_range"])
+                / (self.Input["lightSpeed"] * 0.8),
+                3,
             )
             self.Input["Total_BW"] = (
                 self.Input["Chirp_duration"] * self.Input["Ramp_Slope"]
@@ -690,8 +734,8 @@ class Transform:
             self.Input["Frame_duration"] / 2 / self.Input["Number_of_chirps"]
         ) * 1000 - self.Input["Chirp_duration"]
         idleTime_hi = 5242.87
-        self.Input["max_inter_chirp_duration"] = (
-            toFloor(min(max_inter_chirp_duration1, idleTime_hi), 2)
+        self.Input["max_inter_chirp_duration"] = self.toFloor(
+            min(max_inter_chirp_duration1, idleTime_hi), 2
         )
         N_fft1d_max1 = None
         adc_samples_lo_calc = adc_samples_lo
@@ -884,14 +928,9 @@ class Transform:
         # Input.Maximum_radial_velocity; # directly from widget for RR, best range
         # Input.Maximum_range; # directly from widget for RR, best range
         if self.Input["subprofile_type"] == "best_vel_res":
-            self.Input["Maximum_range"] = (
-                toFloor(
-                    0.8
-                    * self.Input["Range_Resolution"]
-                    * self.Input["Num_ADC_Samples"]
-                        ,2
-                )
-            )  # VR sheet # Winnie's bug : Note Math.floor() only takes 1 arg. Use MyUtil.toFloor(n, p)
+            self.Input["Maximum_range"] = self.toFloor(
+                0.8 * self.Input["Range_Resolution"] * self.Input["Num_ADC_Samples"], 2
+            )  # VR sheet # Winnie's bug : Note Math.floor() only takes 1 arg. Use self.toFloor(n, p)
 
         self.Input["min_Bandwidth"] = self.Input["Min_Allowable_Bandwidth"]
 
@@ -907,9 +946,11 @@ class Transform:
                     or self.Input["Num_ADC_Samples"] > self.Input["max_num_adc_samples"]
                 ):
                     self.Input["Num_ADC_Samples"] = adc_samples_lo_calc
-                self.Input["Maximum_range"] = (
-                    toFloor(0.8 * self.Input["Range_Resolution"])
-                    * self.Input["Num_ADC_Samples"], 2
+                self.Input["Maximum_range"] = self.toFloor(
+                    0.8
+                    * self.Input["Range_Resolution"]
+                    * self.Input["Num_ADC_Samples"],
+                    2,
                 )
             else:
                 # ]
@@ -917,11 +958,11 @@ class Transform:
                     self.Input["Maximum_range"]
                     / (0.8 * self.Input["Range_Resolution"] * 16)
                 )  # but range sheet: range resolution widget selects num adc samples directly
-            self.Input["ADC_Sampling_Rate"] = (
-                toFloor(
-                    (self.Input["Ramp_Slope"] * self.Input["Num_ADC_Samples"])
-                    / self.Input["Sweep_BW"], 3
-                )
+            self.Input["ADC_Sampling_Rate"] = self.toFloor(
+                self.Input["Ramp_Slope"]
+                * self.Input["Num_ADC_Samples"]
+                / self.Input["Sweep_BW"],
+                3,
             )  # RR,VR
             self.Input["Range_FFT_size"] = 1 << math.ceil(
                 math.log2(self.Input["Num_ADC_Samples"])
@@ -948,10 +989,10 @@ class Transform:
                 self.Input["lightSpeed"] / (2 * self.Input["Range_Resolution"]), 3
             )  # Range Sheet
 
-        self.Input["Range_high"] = toFloor(
+        self.Input["Range_high"] = self.toFloor(
             0.8 * self.Input["Range_Resolution"] * self.Input["max_num_adc_samples"], 2
         )
-        self.Input["Range_low"] = toCeil(
+        self.Input["Range_low"] = self.toCeil(
             0.8 * self.Input["Range_Resolution"] * adc_samples_lo_calc, 2
         )
 
@@ -959,18 +1000,20 @@ class Transform:
         if self.Input["subprofile_type"] == "best_range_res":
             if self.Input["platform"] in [Platform.xWR16xx, Platform.xWR18xx]:
                 # "16" is due to the limitation on ADC samples in the demo
-                RangeIncrements = toCeil(0.8 * self.Input["Range_Resolution"] * 16, 2)
-            maxRangeConstraints1(
+                RangeIncrements = self.toCeil(
+                    0.8 * self.Input["Range_Resolution"] * 16, 2
+                )
+            self.maxRangeConstraints1(
                 self.Input["Range_low"], self.Input["Range_high"], RangeIncrements
             )
         elif self.Input["subprofile_type"] == "best_vel_res":
-            rangeResolutionConstraints2(
+            self.rangeResolutionConstraints2(
                 self.Input["lightSpeed"],
                 self.Input["Sweep_BW"],
                 self.Input["min_Bandwidth"],
                 self.Input["max_Bandwidth"],
             )
-            maxRangeConstraints2(
+            self.maxRangeConstraints2(
                 self.Input["Range_low"],
                 self.Input["Range_high"],
                 adc_samples_lo,
@@ -988,11 +1031,11 @@ class Transform:
                 self.Input["Maximum_range_list"][1]
                 - self.Input["Maximum_range_list"][0]
             )
-            maxRangeConstraints1(lo, hi, inc);
-            rangeResolutionConstraints3(
+            self.maxRangeConstraints1(lo, hi, inc)
+            self.rangeResolutionConstraints3(
                 self.Input["Maximum_range"],
                 adc_samples_lo,
-                self.Input["max_num_adc_samples"]
+                self.Input["max_num_adc_samples"],
             )
 
         self.Input["Wavelength"] = (
@@ -1053,7 +1096,7 @@ class Transform:
         )
 
         if self.Input["subprofile_type"] != "best_vel_res":
-            self.Input["v_max_high"] = MyUtil.toFloor(
+            self.Input["v_max_high"] = self.toFloor(
                 (self.Input["lightSpeed"] * 1000)
                 / (
                     4
@@ -1063,7 +1106,7 @@ class Transform:
                 ),
                 2,
             )
-            self.Input["v_max_low"] = MyUtil.toCeil(
+            self.Input["v_max_low"] = self.toCeil(
                 (self.Input["lightSpeed"] * 1000)
                 / (
                     4
@@ -1091,62 +1134,66 @@ class Transform:
             self.Input["subprofile_type"] == "best_range_res"
             or self.Input["subprofile_type"] == "best_range"
         ):
-            radialVelocityConstraints1(
+            self.radialVelocityConstraints1(
                 self.Input["v_max_low"], self.Input["v_max_high"], 0.01
             )  # RR, best range
         else:
-            radialVelocityConstraints2(
+            self.radialVelocityConstraints2(
                 self.Input["v_max_low"],
                 self.Input["v_max_high"],
                 N_fft2d_lo,
                 self.Input["max_number_of_chirps"] / self.Input["Number_of_TX"],
             )
 
-
-        self.Input["vel_res_high"] = MyUtil.toCeil(
-        (self.Input["Maximum_radial_velocity"] * 2) / N_fft2d_lo,
-        2
+        self.Input["vel_res_high"] = self.toCeil(
+            (self.Input["Maximum_radial_velocity"] * 2) / N_fft2d_lo, 2
         )
-        self.Input["vel_res_low"] = MyUtil.toCeil(
-        (self.Input["Maximum_radial_velocity"] * 2 * self.Input["Number_of_TX"]) /
-            self.Input["max_number_of_chirps"],
-        2
+        self.Input["vel_res_low"] = self.toCeil(
+            (self.Input["Maximum_radial_velocity"] * 2 * self.Input["Number_of_TX"])
+            / self.Input["max_number_of_chirps"],
+            2,
         )
 
-        if (self.Input["subprofile_type"] == "best_range_res" or self.Input["subprofile_type"] == "best_range"):
-            velocityResolutionConstraints1(
+        if (
+            self.Input["subprofile_type"] == "best_range_res"
+            or self.Input["subprofile_type"] == "best_range"
+        ):
+            self.velocityResolutionConstraints1(
                 self.Input["max_number_of_chirps"],
                 self.Input["Number_of_TX"],
                 N_fft2d_lo,
                 self.Input["Maximum_radial_velocity"],
-                self.Input["Doppler_FFT_size"]
-            ) #RR, best range
-        valueN2d = int(templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue)
-        if not isnan(valueN2d):
+                self.Input["Doppler_FFT_size"],
+            )  # RR, best range
+        valueN2d = int(
+            templateObj.ti_widget_droplist_radial_vel_resolution.selectedValue
+        )
+        if not math.isnan(valueN2d):
             self.Input["N_fft2d"] = valueN2d
         if self.Input["N_fft2d"]:
             # RR, best range
             # radial velocity resolution derived values
             self.Input["Doppler_FFT_size"] = self.Input["N_fft2d"]
-            self.Input["Number_of_chirps"] = self.Input["N_fft2d"] * self.Input["Number_of_TX"]
-            self.Input["Radial_velocity_Resolution"] = MyUtil.toCeil(
-            self.Input["Maximum_radial_velocity"] / (self.Input["N_fft2d"] / 2),
-            2
+            self.Input["Number_of_chirps"] = (
+                self.Input["N_fft2d"] * self.Input["Number_of_TX"]
+            )
+            self.Input["Radial_velocity_Resolution"] = self.toCeil(
+                self.Input["Maximum_radial_velocity"] / (self.Input["N_fft2d"] / 2), 2
             )
         elif self.Input["subprofile_type"] == "best_vel_res":
-        #radial_velocity_resolution
-            velocityResolutionConstraints2(self.Input["Radial_velocity_Resolution"])
+            # radial_velocity_resolution
+            self.velocityResolutionConstraints2(
+                self.Input["Radial_velocity_Resolution"]
+            )
 
-#TODO?
-        brief(self.Input) # We need to update the labels after this
+    # TODO?
+    # self.brief() # We need to update the labels after this
 
-
-    def get_version_string(self, ver_uint16):
-        hex_str = hex(ver_uint16)[2:] # convert to hex and remove prefix "0x"
-        hex_str = hex_str.rjust(4, '0') # make width=4 by adding leading zeros
-        hex_str = hex_str[:2] + '.' + hex_str[2:] # separate into major/minor
+    def getVersionString(self, ver_uint16):
+        hex_str = hex(ver_uint16)[2:]  # convert to hex and remove prefix "0x"
+        hex_str = hex_str.rjust(4, "0")  # make width=4 by adding leading zeros
+        hex_str = hex_str[:2] + "." + hex_str[2:]  # separate into major/minor
         return hex_str
-
 
     def generate_ChannelCfg(self):
         if self.Input["Number_of_RX"] == 4:
@@ -1160,7 +1207,10 @@ class Transform:
         else:
             self.P["channelCfg"]["rxChannelEn"] = 0
 
-        if self.Input["platform"] == self.Platform.xWR14xx or self.Input["platform"] == self.Platform.xWR18xx:
+        if (
+            self.Input["platform"] == Platform.xWR14xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ):
             if self.Input["Number_of_TX"] == 3:
                 self.P["channelCfg"]["txChannelEn"] = 7
             elif self.Input["Number_of_TX"] == 2:
@@ -1169,7 +1219,7 @@ class Transform:
                 self.P["channelCfg"]["txChannelEn"] = 1
             else:
                 self.P["channelCfg"]["txChannelEn"] = 0
-        elif self.Input["platform"] == self.Platform.xWR16xx:
+        elif self.Input["platform"] == Platform.xWR16xx:
             if self.Input["Number_of_TX"] == 2:
                 self.P["channelCfg"]["txChannelEn"] = 3
             elif self.Input["Number_of_TX"] == 1:
@@ -1180,31 +1230,67 @@ class Transform:
             self.P["channelCfg"]["txChannelEn"] = 0
 
         self.P["channelCfg"]["cascading"] = 0
-        self.P["lines"].append("channelCfg {} {} {}".format(self.P["channelCfg"]["rxChannelEn"], self.P["channelCfg"]["txChannelEn"], self.P["channelCfg"]["cascading"]))
-
+        self.P["lines"].append(
+            "channelCfg {} {} {}".format(
+                self.P["channelCfg"]["rxChannelEn"],
+                self.P["channelCfg"]["txChannelEn"],
+                self.P["channelCfg"]["cascading"],
+            )
+        )
 
     def generate_adcCfg(self):
-        self.P['adcCfg']['numADCBits'] = 2 if self.Input['ADC_bits'] == 16 else 'NA'
-        self.P['adcCfg']['adcOutputFmt'] = 1 if self.Input['ADC_samples_type'] == 2 else 0
-        self.P['adcCfg']['justification'] = 0  # TODO remove
-        self.P['lines'].append("adcCfg " + str(self.P['adcCfg']['numADCBits']) + " " + str(self.P['adcCfg']['adcOutputFmt']))
-
+        self.P["adcCfg"]["numADCBits"] = 2 if self.Input["ADC_bits"] == 16 else "NA"
+        self.P["adcCfg"]["adcOutputFmt"] = (
+            1 if self.Input["ADC_samples_type"] == 2 else 0
+        )
+        self.P["adcCfg"]["justification"] = 0  # TODO remove
+        self.P["lines"].append(
+            "adcCfg "
+            + str(self.P["adcCfg"]["numADCBits"])
+            + " "
+            + str(self.P["adcCfg"]["adcOutputFmt"])
+        )
 
     def generate_adcbufCfg(self):
-        self.P['dataFmt']['rxChannelEn'] = self.P['channelCfg']['rxChannelEn']
-        self.P['dataFmt']['adcOutputFmt'] = 0 if self.Input['ADC_samples_type'] == 2 else 1
-        if self.Input['platform'] in [self.Platform.xWR16xx, self.Platform.xWR18xx]:
-            self.P['dataFmt']['SampleSwap'] = 0
-            self.P['dataFmt']['ChanInterleave'] = 1
+        self.P["dataFmt"]["rxChannelEn"] = self.P["channelCfg"]["rxChannelEn"]
+        self.P["dataFmt"]["adcOutputFmt"] = (
+            0 if self.Input["ADC_samples_type"] == 2 else 1
+        )
+        if self.Input["platform"] in [Platform.xWR16xx, Platform.xWR18xx]:
+            self.P["dataFmt"]["SampleSwap"] = 0
+            self.P["dataFmt"]["ChanInterleave"] = 1
         else:
-            self.P['dataFmt']['SampleSwap'] = 1
-            self.P['dataFmt']['ChanInterleave'] = 0
-        self.P['dataFmt']['chirpThreshold'] = self.Input['chirps_per_interrupt']
-        if (self.Input['platform'] in [self.Platform.xWR16xx, self.Platform.xWR18xx]) and (self.Input['sdkVersionUint16'] >= 0x0101):
-            self.P['lines'].append("adcbufCfg -1 " + " ".join(str(x) for x in [self.P['dataFmt']['adcOutputFmt'], self.P['dataFmt']['SampleSwap'], self.P['dataFmt']['ChanInterleave'], self.P['dataFmt']['chirpThreshold']]))
+            self.P["dataFmt"]["SampleSwap"] = 1
+            self.P["dataFmt"]["ChanInterleave"] = 0
+        self.P["dataFmt"]["chirpThreshold"] = self.Input["chirps_per_interrupt"]
+        if (self.Input["platform"] in [Platform.xWR16xx, Platform.xWR18xx]) and (
+            self.Input["sdkVersionUint16"] >= 0x0101
+        ):
+            self.P["lines"].append(
+                "adcbufCfg -1 "
+                + " ".join(
+                    str(x)
+                    for x in [
+                        self.P["dataFmt"]["adcOutputFmt"],
+                        self.P["dataFmt"]["SampleSwap"],
+                        self.P["dataFmt"]["ChanInterleave"],
+                        self.P["dataFmt"]["chirpThreshold"],
+                    ]
+                )
+            )
         else:
-            self.P['lines'].append("adcbufCfg " + " ".join(str(x) for x in [self.P['dataFmt']['adcOutputFmt'], self.P['dataFmt']['SampleSwap'], self.P['dataFmt']['ChanInterleave'], self.P['dataFmt']['chirpThreshold']]))
-
+            self.P["lines"].append(
+                "adcbufCfg "
+                + " ".join(
+                    str(x)
+                    for x in [
+                        self.P["dataFmt"]["adcOutputFmt"],
+                        self.P["dataFmt"]["SampleSwap"],
+                        self.P["dataFmt"]["ChanInterleave"],
+                        self.P["dataFmt"]["chirpThreshold"],
+                    ]
+                )
+            )
 
     def generate_profileCfg(self):
         self.P["profileCfg"]["profileId"] = 0
@@ -1217,152 +1303,230 @@ class Transform:
         self.P["profileCfg"]["freqSlopeConst"] = self.Input["Ramp_Slope"]
         self.P["profileCfg"]["txStartTime"] = 1
         self.P["profileCfg"]["numAdcSamples"] = self.Input["Num_ADC_Samples"]
-        self.P["profileCfg"]["digOutSampleRate"] = self.Input["ADC_Sampling_Rate"] * 1000
+        self.P["profileCfg"]["digOutSampleRate"] = (
+            self.Input["ADC_Sampling_Rate"] * 1000
+        )
         self.P["profileCfg"]["hpfCornerFreq1"] = 0
         self.P["profileCfg"]["hpfCornerFreq2"] = 0
         self.P["profileCfg"]["rxGain"] = 30
-        
-        self.P["lines"].append(" ".join([
-            "profileCfg",
-            str(self.P["profileCfg"]["profileId"]),
-            str(self.P["profileCfg"]["startFreq"]),
-            str(self.P["profileCfg"]["idleTime"]),
-            str(self.P["profileCfg"]["adcStartTime"]),
-            str(self.P["profileCfg"]["rampEndTime"]),
-            str(self.P["profileCfg"]["txOutPower"]),
-            str(self.P["profileCfg"]["txPhaseShifter"]),
-            str(self.P["profileCfg"]["freqSlopeConst"]),
-            str(self.P["profileCfg"]["txStartTime"]),
-            str(self.P["profileCfg"]["numAdcSamples"]),
-            str(self.P["profileCfg"]["digOutSampleRate"]),
-            str(self.P["profileCfg"]["hpfCornerFreq1"]),
-            str(self.P["profileCfg"]["hpfCornerFreq2"]),
-            str(self.P["profileCfg"]["rxGain"]),
-        ]))
 
+        self.P["lines"].append(
+            " ".join(
+                [
+                    "profileCfg",
+                    str(self.P["profileCfg"]["profileId"]),
+                    str(self.P["profileCfg"]["startFreq"]),
+                    str(self.P["profileCfg"]["idleTime"]),
+                    str(self.P["profileCfg"]["adcStartTime"]),
+                    str(self.P["profileCfg"]["rampEndTime"]),
+                    str(self.P["profileCfg"]["txOutPower"]),
+                    str(self.P["profileCfg"]["txPhaseShifter"]),
+                    str(self.P["profileCfg"]["freqSlopeConst"]),
+                    str(self.P["profileCfg"]["txStartTime"]),
+                    str(self.P["profileCfg"]["numAdcSamples"]),
+                    str(self.P["profileCfg"]["digOutSampleRate"]),
+                    str(self.P["profileCfg"]["hpfCornerFreq1"]),
+                    str(self.P["profileCfg"]["hpfCornerFreq2"]),
+                    str(self.P["profileCfg"]["rxGain"]),
+                ]
+            )
+        )
 
     def generate_chirpCfg(self):
         chirpCfg = {}
-        self.P['chirpCfg'].append(chirpCfg)
-        chirpCfg['startIdx'] = 0
-        chirpCfg['endIdx'] = 0
-        chirpCfg['profileId'] = 0
-        chirpCfg['startFreq'] = 0
-        chirpCfg['freqSlopeVar'] = 0
-        chirpCfg['idleTime'] = 0
-        chirpCfg['adcStartTime'] = 0
-        
-        if self.Input['platform'] == 'Platform.xWR14xx' or self.Input['platform'] == 'Platform.xWR18xx':
-            if self.Input['Number_of_TX'] == 3:
-                chirpCfg['txEnable'] = 1
-            elif self.Input['Number_of_TX'] == 2:
-                chirpCfg['txEnable'] = 1
+        self.P["chirpCfg"].append(chirpCfg)
+        chirpCfg["startIdx"] = 0
+        chirpCfg["endIdx"] = 0
+        chirpCfg["profileId"] = 0
+        chirpCfg["startFreq"] = 0
+        chirpCfg["freqSlopeVar"] = 0
+        chirpCfg["idleTime"] = 0
+        chirpCfg["adcStartTime"] = 0
+
+        if (
+            self.Input["platform"] == "Platform.xWR14xx"
+            or self.Input["platform"] == "Platform.xWR18xx"
+        ):
+            if self.Input["Number_of_TX"] == 3:
+                chirpCfg["txEnable"] = 1
+            elif self.Input["Number_of_TX"] == 2:
+                chirpCfg["txEnable"] = 1
             else:
-                chirpCfg['txEnable'] = 1
-        elif self.Input['platform'] == 'Platform.xWR16xx':
-            if self.Input['Number_of_TX'] == 2:
-                chirpCfg['txEnable'] = 1
+                chirpCfg["txEnable"] = 1
+        elif self.Input["platform"] == "Platform.xWR16xx":
+            if self.Input["Number_of_TX"] == 2:
+                chirpCfg["txEnable"] = 1
             else:
-                chirpCfg['txEnable'] = 1
+                chirpCfg["txEnable"] = 1
         else:
-            chirpCfg['txEnable'] = 0
-            
+            chirpCfg["txEnable"] = 0
+
         chirpCfg = {}
-        self.P['chirpCfg'].append(chirpCfg)
-        chirpCfg['startIdx'] = 1
-        chirpCfg['endIdx'] = 1
-        chirpCfg['profileId'] = 0
-        chirpCfg['startFreq'] = 0
-        chirpCfg['freqSlopeVar'] = 0
-        chirpCfg['idleTime'] = 0
-        chirpCfg['adcStartTime'] = 0
-        
-        if self.Input['platform'] == Platform.xWR14xx or self.Input['platform'] == Platform.xWR18xx:
-            if self.Input['Number_of_TX'] == 3:
-                chirpCfg['txEnable'] = 4
-            elif self.Input['Number_of_TX'] == 2:
-                chirpCfg['txEnable'] = 4
+        self.P["chirpCfg"].append(chirpCfg)
+        chirpCfg["startIdx"] = 1
+        chirpCfg["endIdx"] = 1
+        chirpCfg["profileId"] = 0
+        chirpCfg["startFreq"] = 0
+        chirpCfg["freqSlopeVar"] = 0
+        chirpCfg["idleTime"] = 0
+        chirpCfg["adcStartTime"] = 0
+
+        if (
+            self.Input["platform"] == Platform.xWR14xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ):
+            if self.Input["Number_of_TX"] == 3:
+                chirpCfg["txEnable"] = 4
+            elif self.Input["Number_of_TX"] == 2:
+                chirpCfg["txEnable"] = 4
             else:
-                chirpCfg['txEnable'] = 0
-        elif self.Input['platform'] == 'Platform.xWR16xx':
-            if self.Input['Number_of_TX'] == 2:
-                chirpCfg['txEnable'] = 2
+                chirpCfg["txEnable"] = 0
+        elif self.Input["platform"] == "Platform.xWR16xx":
+            if self.Input["Number_of_TX"] == 2:
+                chirpCfg["txEnable"] = 2
             else:
-                chirpCfg['txEnable'] = 0
+                chirpCfg["txEnable"] = 0
         else:
-            chirpCfg['txEnable'] = 0
-        
-        if (self.Input['platform'] == Platform.xWR14xx or self.Input['platform'] == Platform.xWR18xx) and self.Input['Number_of_TX'] == 3:
+            chirpCfg["txEnable"] = 0
+
+        if (
+            self.Input["platform"] == Platform.xWR14xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ) and self.Input["Number_of_TX"] == 3:
             # TODO 3D case
             chirpCfg = {}
-            self.P['chirpCfg'].append(chirpCfg)
-            chirpCfg['startIdx'] = 2
-            chirpCfg['endIdx'] = 2
-            chirpCfg['profileId'] = 0
-            chirpCfg['startFreq'] = 0
-            chirpCfg['freqSlopeVar'] = 0
-            chirpCfg['idleTime'] = 0
-            chirpCfg['adcStartTime'] = 0
-            chirpCfg['txEnable'] = 2
-        
-        for idx in range(len(self.P['chirpCfg'])):
-            chirpCfg = self.P['chirpCfg'][idx]
-            self.P['lines'].append(" ")
+            self.P["chirpCfg"].append(chirpCfg)
+            chirpCfg["startIdx"] = 2
+            chirpCfg["endIdx"] = 2
+            chirpCfg["profileId"] = 0
+            chirpCfg["startFreq"] = 0
+            chirpCfg["freqSlopeVar"] = 0
+            chirpCfg["idleTime"] = 0
+            chirpCfg["adcStartTime"] = 0
+            chirpCfg["txEnable"] = 2
 
+        for idx in range(len(self.P["chirpCfg"])):
+            chirpCfg = self.P["chirpCfg"][idx]
+            self.P["lines"].append(" ")
 
     def generate_frameCfg(self):
-        self.P['frameCfg']['chirpStartIdx'] = 0
-        self.P['frameCfg']['chirpEndIdx'] = self.Input['Number_of_TX'] - 1
-        self.P['frameCfg']['numLoops'] = self.Input['Number_of_chirps'] // (self.P['frameCfg']['chirpEndIdx'] - self.P['frameCfg']['chirpStartIdx'] + 1)
-        self.P['frameCfg']['numFrames'] = 0
-        self.P['frameCfg']['framePeriodicity'] = self.Input['Frame_duration']
-        self.P['frameCfg']['triggerSelect'] = 1
-        self.P['frameCfg']['frameTriggerDelay'] = 0
-        self.P['lines'].append(' '.join(['frameCfg',
-                                    str(self.P['frameCfg']['chirpStartIdx']),
-                                    str(self.P['frameCfg']['chirpEndIdx']),
-                                    str(self.P['frameCfg']['numLoops']),
-                                    str(self.P['frameCfg']['numFrames']),
-                                    str(self.P['frameCfg']['framePeriodicity']),
-                                    str(self.P['frameCfg']['triggerSelect']),
-                                    str(self.P['frameCfg']['frameTriggerDelay'])]))
-
+        self.P["frameCfg"]["chirpStartIdx"] = 0
+        self.P["frameCfg"]["chirpEndIdx"] = self.Input["Number_of_TX"] - 1
+        self.P["frameCfg"]["numLoops"] = self.Input["Number_of_chirps"] // (
+            self.P["frameCfg"]["chirpEndIdx"] - self.P["frameCfg"]["chirpStartIdx"] + 1
+        )
+        self.P["frameCfg"]["numFrames"] = 0
+        self.P["frameCfg"]["framePeriodicity"] = self.Input["Frame_duration"]
+        self.P["frameCfg"]["triggerSelect"] = 1
+        self.P["frameCfg"]["frameTriggerDelay"] = 0
+        self.P["lines"].append(
+            " ".join(
+                [
+                    "frameCfg",
+                    str(self.P["frameCfg"]["chirpStartIdx"]),
+                    str(self.P["frameCfg"]["chirpEndIdx"]),
+                    str(self.P["frameCfg"]["numLoops"]),
+                    str(self.P["frameCfg"]["numFrames"]),
+                    str(self.P["frameCfg"]["framePeriodicity"]),
+                    str(self.P["frameCfg"]["triggerSelect"]),
+                    str(self.P["frameCfg"]["frameTriggerDelay"]),
+                ]
+            )
+        )
 
     def generate_guiMonitorCfg(self):
-        self.P["guiMonitor"]["detectedObjects"] = 1 if templateObj.ti_widget_checkbox_scatter_plot.checked else 0
-        self.P["guiMonitor"]["logMagRange"] = 1 if templateObj.ti_widget_checkbox_range_profile.checked else 0
-        self.P["guiMonitor"]["noiseProfile"] = 1 if templateObj.ti_widget_checkbox_noise_profile.checked else 0
-        self.P["guiMonitor"]["rangeAzimuthHeatMap"] = 1 if templateObj.ti_widget_checkbox_azimuth_heatmap.checked else 0
-        self.P["guiMonitor"]["rangeDopplerHeatMap"] = 1 if templateObj.ti_widget_checkbox_doppler_heatmap.checked else 0
-        self.P["guiMonitor"]["statsInfo"] = 1 if templateObj.ti_widget_checkbox_statistics.checked else 0
-        if self.Input["platform"] in [Platform.xWR16xx, Platform.xWR18xx] and self.Input["sdkVersionUint16"] >= 0x0101:
-            self.P["lines"].append(f'"guiMonitor -1" {self.P["guiMonitor"]["detectedObjects"]} {self.P["guiMonitor"]["logMagRange"]} {self.P["guiMonitor"]["noiseProfile"]} {self.P["guiMonitor"]["rangeAzimuthHeatMap"]} {self.P["guiMonitor"]["rangeDopplerHeatMap"]} {self.P["guiMonitor"]["statsInfo"]}')
+        self.P["guiMonitor"]["detectedObjects"] = (
+            1 if templateObj.ti_widget_checkbox_scatter_plot.checked else 0
+        )
+        self.P["guiMonitor"]["logMagRange"] = (
+            1 if templateObj.ti_widget_checkbox_range_profile.checked else 0
+        )
+        self.P["guiMonitor"]["noiseProfile"] = (
+            1 if templateObj.ti_widget_checkbox_noise_profile.checked else 0
+        )
+        self.P["guiMonitor"]["rangeAzimuthHeatMap"] = (
+            1 if templateObj.ti_widget_checkbox_azimuth_heatmap.checked else 0
+        )
+        self.P["guiMonitor"]["rangeDopplerHeatMap"] = (
+            1 if templateObj.ti_widget_checkbox_doppler_heatmap.checked else 0
+        )
+        self.P["guiMonitor"]["statsInfo"] = (
+            1 if templateObj.ti_widget_checkbox_statistics.checked else 0
+        )
+        if (
+            self.Input["platform"] in [Platform.xWR16xx, Platform.xWR18xx]
+            and self.Input["sdkVersionUint16"] >= 0x0101
+        ):
+            self.P["lines"].append(
+                f'"guiMonitor -1" {self.P["guiMonitor"]["detectedObjects"]} {self.P["guiMonitor"]["logMagRange"]} {self.P["guiMonitor"]["noiseProfile"]} {self.P["guiMonitor"]["rangeAzimuthHeatMap"]} {self.P["guiMonitor"]["rangeDopplerHeatMap"]} {self.P["guiMonitor"]["statsInfo"]}'
+            )
         else:
-            self.P["lines"].append(f'"guiMonitor" {self.P["guiMonitor"]["detectedObjects"]} {self.P["guiMonitor"]["logMagRange"]} {self.P["guiMonitor"]["noiseProfile"]} {self.P["guiMonitor"]["rangeAzimuthHeatMap"]} {self.P["guiMonitor"]["rangeDopplerHeatMap"]} {self.P["guiMonitor"]["statsInfo"]}')
-
+            self.P["lines"].append(
+                f'"guiMonitor" {self.P["guiMonitor"]["detectedObjects"]} {self.P["guiMonitor"]["logMagRange"]} {self.P["guiMonitor"]["noiseProfile"]} {self.P["guiMonitor"]["rangeAzimuthHeatMap"]} {self.P["guiMonitor"]["rangeDopplerHeatMap"]} {self.P["guiMonitor"]["statsInfo"]}'
+            )
 
     def generate_cfarCfg(self):
         cfarCfg = {}
         self.P["cfarRangeCfg"] = cfarCfg
-        if self.Input["platform"] == Platform.xWR16xx or self.Input["platform"] == Platform.xWR18xx:
+        if (
+            self.Input["platform"] == Platform.xWR16xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ):
             cfarCfg["avgMode"] = 0
         else:
             cfarCfg["avgMode"] = 2
         cfarCfg["noiseAvgWindowLength"] = 8
         cfarCfg["guardLength"] = 4
-        if self.Input["platform"] == Platform.xWR16xx or self.Input["platform"] == Platform.xWR18xx:
+        if (
+            self.Input["platform"] == Platform.xWR16xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ):
             cfarCfg["noiseSumDivisorAsShift"] = 4
         else:
             cfarCfg["noiseSumDivisorAsShift"] = 3
         cfarCfg["cyclicMode"] = 0
-        cfarCfg["thresholdScale"] = convertSensitivitydBToLinear(self.Input["Range_Sensitivity"], self.Input["platform"], self.Input["Num_Virt_Ant"])
-        if (self.Input["platform"] == Platform.xWR16xx or self.Input["platform"] == Platform.xWR18xx) and self.Input["sdkVersionUint16"] >= 0x0101:
-            self.P["lines"].append(" ".join(["cfarCfg -1 0", str(cfarCfg["avgMode"]), str(cfarCfg["noiseAvgWindowLength"]), str(cfarCfg["guardLength"]), str(cfarCfg["noiseSumDivisorAsShift"]), str(cfarCfg["cyclicMode"]), str(cfarCfg["thresholdScale"])]))
+        cfarCfg["thresholdScale"] = self.convertSensitivitydBToLinear(
+            self.Input["Range_Sensitivity"],
+            self.Input["platform"],
+            self.Input["Num_Virt_Ant"],
+        )
+        if (
+            self.Input["platform"] == Platform.xWR16xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ) and self.Input["sdkVersionUint16"] >= 0x0101:
+            self.P["lines"].append(
+                " ".join(
+                    [
+                        "cfarCfg -1 0",
+                        str(cfarCfg["avgMode"]),
+                        str(cfarCfg["noiseAvgWindowLength"]),
+                        str(cfarCfg["guardLength"]),
+                        str(cfarCfg["noiseSumDivisorAsShift"]),
+                        str(cfarCfg["cyclicMode"]),
+                        str(cfarCfg["thresholdScale"]),
+                    ]
+                )
+            )
         else:
-            self.P["lines"].append(" ".join(["cfarCfg 0", str(cfarCfg["avgMode"]), str(cfarCfg["noiseAvgWindowLength"]), str(cfarCfg["guardLength"]), str(cfarCfg["noiseSumDivisorAsShift"]), str(cfarCfg["cyclicMode"]), str(cfarCfg["thresholdScale"])]))
+            self.P["lines"].append(
+                " ".join(
+                    [
+                        "cfarCfg 0",
+                        str(cfarCfg["avgMode"]),
+                        str(cfarCfg["noiseAvgWindowLength"]),
+                        str(cfarCfg["guardLength"]),
+                        str(cfarCfg["noiseSumDivisorAsShift"]),
+                        str(cfarCfg["cyclicMode"]),
+                        str(cfarCfg["thresholdScale"]),
+                    ]
+                )
+            )
 
         # CFAR doppler only supported in xWR16xx
-        if self.Input["platform"] == Platform.xWR16xx or self.Input["platform"] == Platform.xWR18xx:
+        if (
+            self.Input["platform"] == Platform.xWR16xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ):
             cfarCfg = {}
             self.P["cfarDopplerCfg"] = cfarCfg
             cfarCfg["avgMode"] = 0
@@ -1376,133 +1540,275 @@ class Transform:
                 cfarCfg["guardLength"] = 4
                 cfarCfg["noiseSumDivisorAsShift"] = 4
             cfarCfg["cyclicMode"] = 0
-            cfarCfg["thresholdScale"] = convertSensitivitydBToLinear(self.Input["Doppler_Sensitivity"], self.Input["platform"], self.Input["Num_Virt_Ant"])
+            cfarCfg["thresholdScale"] = self.convertSensitivitydBToLinear(
+                self.Input["Doppler_Sensitivity"],
+                self.Input["platform"],
+                self.Input["Num_Virt_Ant"],
+            )
             if self.Input["sdkVersionUint16"] >= 0x0101:
-                self.P["lines"].append(" ".join(["cfarCfg -1 1", str(cfarCfg["avgMode"]), str(cfarCfg["noiseAvgWindowLength"]), str(cfarCfg["guardLength"]), str(cfarCfg["noiseSumDivisorAsShift"]), str(cfarCfg["cyclicMode"]), str(cfarCfg["thresholdScale"])]))
+                self.P["lines"].append(
+                    " ".join(
+                        [
+                            "cfarCfg -1 1",
+                            str(cfarCfg["avgMode"]),
+                            str(cfarCfg["noiseAvgWindowLength"]),
+                            str(cfarCfg["guardLength"]),
+                            str(cfarCfg["noiseSumDivisorAsShift"]),
+                            str(cfarCfg["cyclicMode"]),
+                            str(cfarCfg["thresholdScale"]),
+                        ]
+                    )
+                )
             else:
-                self.P['lines'].append(" ".join(["cfarCfg 1", str(cfarCfg['avgMode']),
-                    str(cfarCfg['noiseAvgWindowLength']),
-                    str(cfarCfg['guardLength']),
-                    str(cfarCfg['noiseSumDivisorAsShift']),
-                    str(cfarCfg['cyclicMode']),
-                    str(cfarCfg['thresholdScale']),
-                ]))
-
+                self.P["lines"].append(
+                    " ".join(
+                        [
+                            "cfarCfg 1",
+                            str(cfarCfg["avgMode"]),
+                            str(cfarCfg["noiseAvgWindowLength"]),
+                            str(cfarCfg["guardLength"]),
+                            str(cfarCfg["noiseSumDivisorAsShift"]),
+                            str(cfarCfg["cyclicMode"]),
+                            str(cfarCfg["thresholdScale"]),
+                        ]
+                    )
+                )
 
     def generate_peakGroupingCfg(self):
         peakGrouping = {}
-        peakGrouping['groupingMode'] = 1
-        peakGrouping['rangeDimEn'] = 1 if templateObj.ti_widget_checkbox_grouppeak_rangedir.checked else 0
-        peakGrouping['dopplerDimEn'] = 1 if templateObj.ti_widget_checkbox_grouppeak_dopplerdir.checked else 0
-        peakGrouping['startRangeIdx'] = 1
-        if self.Input['platform'] == Platform.xWR16xx or self.Input['platform'] == Platform.xWR18xx:
-            peakGrouping['endRangeIdx'] = self.Input['Range_FFT_size'] - 1 #MMWSDK-546
+        peakGrouping["groupingMode"] = 1
+        peakGrouping["rangeDimEn"] = (
+            1 if templateObj.ti_widget_checkbox_grouppeak_rangedir.checked else 0
+        )
+        peakGrouping["dopplerDimEn"] = (
+            1 if templateObj.ti_widget_checkbox_grouppeak_dopplerdir.checked else 0
+        )
+        peakGrouping["startRangeIdx"] = 1
+        if (
+            self.Input["platform"] == Platform.xWR16xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ):
+            peakGrouping["endRangeIdx"] = self.Input["Range_FFT_size"] - 1  # MMWSDK-546
         else:
-            peakGrouping['endRangeIdx'] = math.floor(0.9 * self.Input['Range_FFT_size']) - 1 #MMWSDK-546
-        if (self.Input['platform'] == Platform.xWR16xx or self.Input['platform'] == Platform.xWR18xx) and self.Input['sdkVersionUint16'] >= 0x0101:
-            self.P['lines'].append(" ".join(["peakGrouping -1", str(peakGrouping['groupingMode']), str(peakGrouping['rangeDimEn']), str(peakGrouping['dopplerDimEn']), str(peakGrouping['startRangeIdx']), str(peakGrouping['endRangeIdx'])]))
+            peakGrouping["endRangeIdx"] = (
+                math.floor(0.9 * self.Input["Range_FFT_size"]) - 1
+            )  # MMWSDK-546
+        if (
+            self.Input["platform"] == Platform.xWR16xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ) and self.Input["sdkVersionUint16"] >= 0x0101:
+            self.P["lines"].append(
+                " ".join(
+                    [
+                        "peakGrouping -1",
+                        str(peakGrouping["groupingMode"]),
+                        str(peakGrouping["rangeDimEn"]),
+                        str(peakGrouping["dopplerDimEn"]),
+                        str(peakGrouping["startRangeIdx"]),
+                        str(peakGrouping["endRangeIdx"]),
+                    ]
+                )
+            )
         else:
-            self.P['lines'].append(" ".join(["peakGrouping", str(peakGrouping['groupingMode']), str(peakGrouping['rangeDimEn']), str(peakGrouping['dopplerDimEn']), str(peakGrouping['startRangeIdx']), str(peakGrouping['endRangeIdx'])]))
-
+            self.P["lines"].append(
+                " ".join(
+                    [
+                        "peakGrouping",
+                        str(peakGrouping["groupingMode"]),
+                        str(peakGrouping["rangeDimEn"]),
+                        str(peakGrouping["dopplerDimEn"]),
+                        str(peakGrouping["startRangeIdx"]),
+                        str(peakGrouping["endRangeIdx"]),
+                    ]
+                )
+            )
 
     def generate_BFCfg(self):
         multiObjBeamForming = {}
         multiObjBeamForming["enabled"] = 1
         multiObjBeamForming["threshold"] = 0.5
-        if (self.Input["platform"] == Platform.xWR16xx or self.Input["platform"] == Platform.xWR18xx) and self.Input["sdkVersionUint16"] >= 0x0101:
-            self.P["lines"].append("multiObjBeamForming -1 " + str(multiObjBeamForming["enabled"]) + " " + str(multiObjBeamForming["threshold"]))
+        if (
+            self.Input["platform"] == Platform.xWR16xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ) and self.Input["sdkVersionUint16"] >= 0x0101:
+            self.P["lines"].append(
+                "multiObjBeamForming -1 "
+                + str(multiObjBeamForming["enabled"])
+                + " "
+                + str(multiObjBeamForming["threshold"])
+            )
         else:
-            self.P["lines"].append("multiObjBeamForming " + str(multiObjBeamForming["enabled"]) + " " + str(multiObjBeamForming["threshold"]))
+            self.P["lines"].append(
+                "multiObjBeamForming "
+                + str(multiObjBeamForming["enabled"])
+                + " "
+                + str(multiObjBeamForming["threshold"])
+            )
 
     def generate_clutterCfg(self):
         if self.Input["sdkVersionUint16"] >= 0x0101:
-            self.P["clutterRemoval"]["enabled"] = 1 if templateObj.$ti_widget_checkbox_clutter_removal.checked else 0
-            if self.Input["platform"] == Platform.xWR16xx or self.Input["platform"] == Platform.xWR18xx:
-                self.P["lines"].append("clutterRemoval -1 " + str(self.P["clutterRemoval"]["enabled"]))
+            self.P["clutterRemoval"]["enabled"] = (
+                1 if templateObj.ti_widget_checkbox_clutter_removal.checked else 0
+            )
+            if (
+                self.Input["platform"] == Platform.xWR16xx
+                or self.Input["platform"] == Platform.xWR18xx
+            ):
+                self.P["lines"].append(
+                    "clutterRemoval -1 " + str(self.P["clutterRemoval"]["enabled"])
+                )
             else:
-                self.P["lines"].append("clutterRemoval " + str(self.P["clutterRemoval"]["enabled"]))
-
+                self.P["lines"].append(
+                    "clutterRemoval " + str(self.P["clutterRemoval"]["enabled"])
+                )
 
     def generate_DcRangeCfg(self):
         calibDcRangeSig = {}
-        calibDcRangeSig['enabled'] = 0
-        calibDcRangeSig['negativeBinIdx'] = -5
-        calibDcRangeSig['positiveBinIdx'] = 8
-        calibDcRangeSig['numAvgChirps'] = 256
+        calibDcRangeSig["enabled"] = 0
+        calibDcRangeSig["negativeBinIdx"] = -5
+        calibDcRangeSig["positiveBinIdx"] = 8
+        calibDcRangeSig["numAvgChirps"] = 256
 
-        if (self.Input['platform'] == Platform.xWR16xx or self.Input['platform'] == Platform.xWR18xx) and self.Input['sdkVersionUint16'] >= 0x0101:
-            self.P['lines'].append(" ".join(["calibDcRangeSig", "-1", str(calibDcRangeSig['enabled']), str(calibDcRangeSig['negativeBinIdx']), str(calibDcRangeSig['positiveBinIdx']), str(calibDcRangeSig['numAvgChirps'])]))
+        if (
+            self.Input["platform"] == Platform.xWR16xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ) and self.Input["sdkVersionUint16"] >= 0x0101:
+            self.P["lines"].append(
+                " ".join(
+                    [
+                        "calibDcRangeSig",
+                        "-1",
+                        str(calibDcRangeSig["enabled"]),
+                        str(calibDcRangeSig["negativeBinIdx"]),
+                        str(calibDcRangeSig["positiveBinIdx"]),
+                        str(calibDcRangeSig["numAvgChirps"]),
+                    ]
+                )
+            )
         else:
-            self.P['lines'].append(" ".join(["calibDcRangeSig", str(calibDcRangeSig['enabled']), str(calibDcRangeSig['negativeBinIdx']), str(calibDcRangeSig['positiveBinIdx']), str(calibDcRangeSig['numAvgChirps'])]))
+            self.P["lines"].append(
+                " ".join(
+                    [
+                        "calibDcRangeSig",
+                        str(calibDcRangeSig["enabled"]),
+                        str(calibDcRangeSig["negativeBinIdx"]),
+                        str(calibDcRangeSig["positiveBinIdx"]),
+                        str(calibDcRangeSig["numAvgChirps"]),
+                    ]
+                )
+            )
 
     def generate_extendedVeloCfg(self):
         extendedMaxVelocity = {}
-        extendedMaxVelocity['enabled'] = 0
-        if (self.Input['platform'] == Platform.xWR16xx or self.Input['platform'] == Platform.xWR18xx) and self.Input['sdkVersionUint16'] >= 0x0101:
-            self.P['lines'].append(" ".join(["extendedMaxVelocity", "-1", str(extendedMaxVelocity['enabled'])]))
-
-
+        extendedMaxVelocity["enabled"] = 0
+        if (
+            self.Input["platform"] == Platform.xWR16xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ) and self.Input["sdkVersionUint16"] >= 0x0101:
+            self.P["lines"].append(
+                " ".join(
+                    ["extendedMaxVelocity", "-1", str(extendedMaxVelocity["enabled"])]
+                )
+            )
 
     def generate_lowPowerCfg(self):
         lowPower = {}
 
-        if (self.Input['platform'] == 'xWR14xx' or self.Input['platform'] == 'xWR16xx' or self.Input['platform'] == 'xWR18xx') and self.Input['sdkVersionUint16'] >= 0x0200:
-            lowPower['lpAdcMode'] = 1
+        if (
+            self.Input["platform"] == "xWR14xx"
+            or self.Input["platform"] == "xWR16xx"
+            or self.Input["platform"] == "xWR18xx"
+        ) and self.Input["sdkVersionUint16"] >= 0x0200:
+            lowPower["lpAdcMode"] = 1
         else:
-            lowPower['lpAdcMode'] = 0
+            lowPower["lpAdcMode"] = 0
 
-        self.P['lines'].append(' '.join(["lowPower 0", str(lowPower['lpAdcMode'])]))
+        self.P["lines"].append(" ".join(["lowPower 0", str(lowPower["lpAdcMode"])]))
 
     def generate_bpmCfg(self):
         bpmCfg = {}
-        bpmCfg['enabled'] = 0
-        bpmCfg['chirp0Idx'] = 0
-        bpmCfg['chirp1Idx'] = 1
-        if (self.Input['platform'] == 'xWR16xx' or self.Input['platform'] == 'xWR18xx') and self.Input['sdkVersionUint16'] >= 0x0102:
-            self.P['lines'].append(
-                ' '.join([
-                    "bpmCfg -1",
-                    str(bpmCfg['enabled']),
-                    str(bpmCfg['chirp0Idx']),
-                    str(bpmCfg['chirp1Idx'])
-                ])
+        bpmCfg["enabled"] = 0
+        bpmCfg["chirp0Idx"] = 0
+        bpmCfg["chirp1Idx"] = 1
+        if (
+            self.Input["platform"] == "xWR16xx" or self.Input["platform"] == "xWR18xx"
+        ) and self.Input["sdkVersionUint16"] >= 0x0102:
+            self.P["lines"].append(
+                " ".join(
+                    [
+                        "bpmCfg -1",
+                        str(bpmCfg["enabled"]),
+                        str(bpmCfg["chirp0Idx"]),
+                        str(bpmCfg["chirp1Idx"]),
+                    ]
+                )
             )
 
     def generate_lvdsStreamCfg(self):
         lvdsStreamCfg = {}
-        lvdsStreamCfg['isHeaderEnabled'] = 0
-        lvdsStreamCfg['dataFmt'] = 0
-        lvdsStreamCfg['isSwEnabled'] = 0
+        lvdsStreamCfg["isHeaderEnabled"] = 0
+        lvdsStreamCfg["dataFmt"] = 0
+        lvdsStreamCfg["isSwEnabled"] = 0
 
-        if (self.Input['platform'] == Platform.xWR16xx or self.Input['platform'] == Platform.xWR18xx) and self.Input['sdkVersionUint16'] >= 0x0102:
-            self.P['lines'].append("lvdsStreamCfg -1 " + str(lvdsStreamCfg['isHeaderEnabled']) + " " + str(lvdsStreamCfg['dataFmt']) + " " + str(lvdsStreamCfg['isSwEnabled']))
+        if (
+            self.Input["platform"] == Platform.xWR16xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ) and self.Input["sdkVersionUint16"] >= 0x0102:
+            self.P["lines"].append(
+                "lvdsStreamCfg -1 "
+                + str(lvdsStreamCfg["isHeaderEnabled"])
+                + " "
+                + str(lvdsStreamCfg["dataFmt"])
+                + " "
+                + str(lvdsStreamCfg["isSwEnabled"])
+            )
 
     def generate_nearFieldCfg(self):
         nearFieldCfg = {}
-        nearFieldCfg['enabled'] = 0
-        nearFieldCfg['startRangeIdx'] = 0
-        nearFieldCfg['endRangeIdx'] = 0
-        if (self.Input['platform'] == Platform.xWR16xx or self.Input['platform'] == Platform.xWR18xx) and self.Input['sdkVersionUint16'] >= 0x0102:
-            self.P['lines'].append("nearFieldCfg -1 " + str(nearFieldCfg['enabled']) + " " + str(nearFieldCfg['startRangeIdx']) + " " + str(nearFieldCfg['endRangeIdx'])))
+        nearFieldCfg["enabled"] = 0
+        nearFieldCfg["startRangeIdx"] = 0
+        nearFieldCfg["endRangeIdx"] = 0
+        if (
+            self.Input["platform"] == Platform.xWR16xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ) and self.Input["sdkVersionUint16"] >= 0x0102:
+            self.P["lines"].append(
+                " ".join(
+                    [
+                        "nearFieldCfg -1",
+                        str(nearFieldCfg["enabled"]),
+                        str(nearFieldCfg["startRangeIdx"]),
+                        str(nearFieldCfg["endRangeIdx"]),
+                    ]
+                )
+            )
 
     def generate_compRangeBiasAndRxChanPhase(self):
-        if self.Input['sdkVersionUint16'] >= 0x0101:
-            if self.Input['platform'] == Platform.xWR16xx:
-                self.P['lines'].append("compRangeBiasAndRxChanPhase 0.0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0")
-            elif self.Input['platform'] == Platform.xWR14xx or self.Input['platform'] == Platform.xWR18xx:
-                self.P['lines'].append("compRangeBiasAndRxChanPhase 0.0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0")
+        if self.Input["sdkVersionUint16"] >= 0x0101:
+            if self.Input["platform"] == Platform.xWR16xx:
+                self.P["lines"].append(
+                    "compRangeBiasAndRxChanPhase 0.0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0"
+                )
+            elif (
+                self.Input["platform"] == Platform.xWR14xx
+                or self.Input["platform"] == Platform.xWR18xx
+            ):
+                self.P["lines"].append(
+                    "compRangeBiasAndRxChanPhase 0.0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0"
+                )
 
     def generate_measureRangeBiasAndRxChanPhase(self):
-        if self.Input['sdkVersionUint16'] >= 0x0101:
-            self.P['lines'].append("measureRangeBiasAndRxChanPhase 0 1.5 0.2")
-
+        if self.Input["sdkVersionUint16"] >= 0x0101:
+            self.P["lines"].append("measureRangeBiasAndRxChanPhase 0 1.5 0.2")
 
     def generate_CQrxSat(self):
         CQrxSatMon = {}
         numPrimarySlices = 64
         primarySliceDuration = 4
-        if self.Input['sdkVersionUint16'] >= 0x0102:
-            samplingTime = self.Input['Num_ADC_Samples'] / self.Input['ADC_Sampling_Rate']
+        if self.Input["sdkVersionUint16"] >= 0x0102:
+            samplingTime = (
+                self.Input["Num_ADC_Samples"] / self.Input["ADC_Sampling_Rate"]
+            )
             primarySliceDuration = math.ceil(samplingTime / 0.16 / 64)
             if primarySliceDuration < 4:
                 primarySliceDuration = 4
@@ -1510,91 +1816,131 @@ class Transform:
             numPrimarySlices = math.ceil(samplingTime / (0.16 * primarySliceDuration))
             while numPrimarySlices > 64:
                 primarySliceDuration += 1
-                numPrimarySlices = math.ceil(samplingTime / (0.16 * primarySliceDuration))
+                numPrimarySlices = math.ceil(
+                    samplingTime / (0.16 * primarySliceDuration)
+                )
 
-            CQrxSatMon['profileIndx'] = self.P['profileCfg']['profileId']
-            CQrxSatMon['satMonSel'] = 3
-            CQrxSatMon['primarySliceDuration'] = primarySliceDuration
-            CQrxSatMon['numSlices'] = numPrimarySlices * 2 - 1
-            CQrxSatMon['rxChannelMask'] = 0
+            CQrxSatMon["profileIndx"] = self.P["profileCfg"]["profileId"]
+            CQrxSatMon["satMonSel"] = 3
+            CQrxSatMon["primarySliceDuration"] = primarySliceDuration
+            CQrxSatMon["numSlices"] = numPrimarySlices * 2 - 1
+            CQrxSatMon["rxChannelMask"] = 0
 
-            self.P['lines'].append(f"CQRxSatMonitor {CQrxSatMon['profileIndx']} {CQrxSatMon['satMonSel']} {CQrxSatMon['primarySliceDuration']} {CQrxSatMon['numSlices']} {CQrxSatMon['rxChannelMask']}")
+            self.P["lines"].append(
+                f"CQRxSatMonitor {CQrxSatMon['profileIndx']} {CQrxSatMon['satMonSel']} {CQrxSatMon['primarySliceDuration']} {CQrxSatMon['numSlices']} {CQrxSatMon['rxChannelMask']}"
+            )
 
     def generate_CQSigImg(self):
         CQSigImgMon = {}
         numPrimarySlices = 64
         samplePerPriSlice = 4
-        if self.Input['sdkVersionUint16'] >= 0x0102:
-            samplePerPriSlice = math.ceil(self.Input['Num_ADC_Samples'] / 64)
+        if self.Input["sdkVersionUint16"] >= 0x0102:
+            samplePerPriSlice = math.ceil(self.Input["Num_ADC_Samples"] / 64)
             if samplePerPriSlice < 4:
                 samplePerPriSlice = 4
             if samplePerPriSlice % 2 != 0:
                 samplePerPriSlice += 1
 
-            numPrimarySlices = math.ceil(self.Input['Num_ADC_Samples'] / samplePerPriSlice)
+            numPrimarySlices = math.ceil(
+                self.Input["Num_ADC_Samples"] / samplePerPriSlice
+            )
             while numPrimarySlices > 64:
                 samplePerPriSlice += 1
-                numPrimarySlices = math.ceil(self.Input['Num_ADC_Samples'] / samplePerPriSlice)
+                numPrimarySlices = math.ceil(
+                    self.Input["Num_ADC_Samples"] / samplePerPriSlice
+                )
 
-            CQSigImgMon['profileIndx'] = self.P['profileCfg']['profileId']
-            CQSigImgMon['numSlices'] = numPrimarySlices * 2 - 1
-            CQSigImgMon['timeSliceNumSamples'] = samplePerPriSlice
+            CQSigImgMon["profileIndx"] = self.P["profileCfg"]["profileId"]
+            CQSigImgMon["numSlices"] = numPrimarySlices * 2 - 1
+            CQSigImgMon["timeSliceNumSamples"] = samplePerPriSlice
 
-            self.P['lines'].append(f"CQSigImgMonitor {CQSigImgMon['profileIndx']} {CQSigImgMon['numSlices']} {CQSigImgMon['timeSliceNumSamples']}")
-
+            self.P["lines"].append(
+                f"CQSigImgMonitor {CQSigImgMon['profileIndx']} {CQSigImgMon['numSlices']} {CQSigImgMon['timeSliceNumSamples']}"
+            )
 
     def generate_analogMon(self):
         analogMon = {}
-        if self.Input['sdkVersionUint16'] >= 0x0102:
-            analogMon['rxSatMonEn'] = 1
-            analogMon['sigImgMonEn'] = 1
-            self.P['lines'].append(f"analogMonitor {analogMon['rxSatMonEn']} {analogMon['sigImgMonEn']}")
+        if self.Input["sdkVersionUint16"] >= 0x0102:
+            analogMon["rxSatMonEn"] = 1
+            analogMon["sigImgMonEn"] = 1
+            self.P["lines"].append(
+                f"analogMonitor {analogMon['rxSatMonEn']} {analogMon['sigImgMonEn']}"
+            )
 
     def generateCfg(self):
-        self.P['lines'].append("% ***************************************************************")
-        self.P['lines'].append(f"% Created for SDK ver:{getVersionString(self.Input['sdkVersionUint16'])}")
-        self.P['lines'].append(f"% Created using Visualizer ver:{visualizerVersion}")
-        self.P['lines'].append(f"% Frequency:{self.Input['Frequency_band']}")
-        self.P['lines'].append(f"% Platform:{self.Input['platform']}")
-        self.P['lines'].append(f"% Scene Classifier:{self.Input['subprofile_type']}")
-        self.P['lines'].append(f"% Azimuth Resolution(deg):{self.Input['Azimuth_Resolution']}")
-        self.P['lines'].append(f"% Range Resolution(m):{self.Input['Range_Resolution']}")
-        self.P['lines'].append(f"% Maximum unambiguous Range(m):{self.Input['Maximum_range']}")
-        self.P['lines'].append(f"% Maximum Radial Velocity(m/s):{self.Input['Maximum_radial_velocity']}")
-        self.P['lines'].append(f"% Radial velocity resolution(m/s):{self.Input['Radial_velocity_Resolution']}")
-        self.P['lines'].append(f"% Frame Duration(msec):{self.Input['Frame_duration']}")
-        self.P['lines'].append(f"% Range Detection Threshold (dB):{self.Input['Range_Sensitivity']}")
-        if self.Input['platform'] == Platform.xWR16xx or self.Input['platform'] == Platform.xWR18xx:
-            self.P['lines'].append(f"% Doppler Detection Threshold (dB):{self.Input['Doppler_Sensitivity']}")
-        self.P['lines'].append(f"% Range Peak Grouping:{'enabled' if templateObj.ti_widget_checkbox_grouppeak_rangedir.checked else 'disabled'}")
-        self.P['lines'].append(f"% Doppler Peak Grouping:{'enabled' if templateObj.ti_widget_checkbox_grouppeak_dopplerdir.checked else 'disabled'}")
-        self.P['lines'].append(f"% Static clutter removal:{'enabled' if templateObj.ti_widget_checkbox_clutter_removal.checked else 'disabled'}")
-        self.P['lines'].append("% ***************************************************************")
+        self.P["lines"].append(
+            "% ***************************************************************"
+        )
+        self.P["lines"].append(
+            f"% Created for SDK ver:{self.getVersionString(self.Input['sdkVersionUint16'])}"
+        )
+        self.P["lines"].append(f"% Created using Visualizer ver:{visualizerVersion}")
+        self.P["lines"].append(f"% Frequency:{self.Input['Frequency_band']}")
+        self.P["lines"].append(f"% Platform:{self.Input['platform']}")
+        self.P["lines"].append(f"% Scene Classifier:{self.Input['subprofile_type']}")
+        self.P["lines"].append(
+            f"% Azimuth Resolution(deg):{self.Input['Azimuth_Resolution']}"
+        )
+        self.P["lines"].append(
+            f"% Range Resolution(m):{self.Input['Range_Resolution']}"
+        )
+        self.P["lines"].append(
+            f"% Maximum unambiguous Range(m):{self.Input['Maximum_range']}"
+        )
+        self.P["lines"].append(
+            f"% Maximum Radial Velocity(m/s):{self.Input['Maximum_radial_velocity']}"
+        )
+        self.P["lines"].append(
+            f"% Radial velocity resolution(m/s):{self.Input['Radial_velocity_Resolution']}"
+        )
+        self.P["lines"].append(f"% Frame Duration(msec):{self.Input['Frame_duration']}")
+        self.P["lines"].append(
+            f"% Range Detection Threshold (dB):{self.Input['Range_Sensitivity']}"
+        )
+        if (
+            self.Input["platform"] == Platform.xWR16xx
+            or self.Input["platform"] == Platform.xWR18xx
+        ):
+            self.P["lines"].append(
+                f"% Doppler Detection Threshold (dB):{self.Input['Doppler_Sensitivity']}"
+            )
+        self.P["lines"].append(
+            f"% Range Peak Grouping:{'enabled' if templateObj.ti_widget_checkbox_grouppeak_rangedir.checked else 'disabled'}"
+        )
+        self.P["lines"].append(
+            f"% Doppler Peak Grouping:{'enabled' if templateObj.ti_widget_checkbox_grouppeak_dopplerdir.checked else 'disabled'}"
+        )
+        self.P["lines"].append(
+            f"% Static clutter removal:{'enabled' if templateObj.ti_widget_checkbox_clutter_removal.checked else 'disabled'}"
+        )
+        self.P["lines"].append(
+            "% ***************************************************************"
+        )
 
-        self.P['lines'].append("sensorStop")
-        self.P['lines'].append("flushCfg")
-        self.P['lines'].append("dfeDataOutputMode 1")
+        self.P["lines"].append("sensorStop")
+        self.P["lines"].append("flushCfg")
+        self.P["lines"].append("dfeDataOutputMode 1")
 
-        generate_ChannelCfg()
-        generate_adcCfg()
-        generate_adcbufCfg()
-        generate_profileCfg()
-        generate_chirpCfg()
-        generate_frameCfg()
-        generate_lowPowerCfg()
-        generate_guiMonitorCfg()
-        generate_cfarCfg()
-        generate_peakGroupingCfg()
-        generate_BFCfg()
-        generate_clutterCfg()
-        generate_DcRangeCfg()
-        generate_extendedVeloCfg()
-        generate_bpmCfg()
-        generate_lvdsStreamCfg(Input, P);
-        generate_nearFieldCfg(Input, P);
-        generate_compRangeBiasAndRxChanPhase(Input, P);
-        generate_measureRangeBiasAndRxChanPhase(Input, P);
-        generate_CQrxSat(Input, P);
-        generate_CQSigImg(Input, P);
-        generate_analogMon(Input, P);
+        self.generate_ChannelCfg()
+        self.generate_adcCfg()
+        self.generate_adcbufCfg()
+        self.generate_profileCfg()
+        self.generate_chirpCfg()
+        self.generate_frameCfg()
+        self.generate_lowPowerCfg()
+        self.generate_guiMonitorCfg()
+        self.generate_cfarCfg()
+        self.generate_peakGroupingCfg()
+        self.generate_BFCfg()
+        self.generate_clutterCfg()
+        self.generate_DcRangeCfg()
+        self.generate_extendedVeloCfg()
+        self.generate_bpmCfg()
+        self.generate_lvdsStreamCfg()
+        self.generate_nearFieldCfg()
+        self.generate_compRangeBiasAndRxChanPhase()
+        self.generate_measureRangeBiasAndRxChanPhase()
+        self.generate_CQrxSat()
+        self.generate_CQSigImg()
+        self.generate_analogMon()
         self.P["lines"].append("sensorStart")
