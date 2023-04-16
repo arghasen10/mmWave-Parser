@@ -62,8 +62,12 @@ def transformRadix2(real, imag):
             j = i
             k = 0
             while j < i + halfsize:
-                tpre = real[j + halfsize] * cosTable[k] + imag[j + halfsize] * sinTable[k]
-                tpim = -real[j + halfsize] * sinTable[k] + imag[j + halfsize] * cosTable[k]
+                tpre = (
+                    real[j + halfsize] * cosTable[k] + imag[j + halfsize] * sinTable[k]
+                )
+                tpim = (
+                    -real[j + halfsize] * sinTable[k] + imag[j + halfsize] * cosTable[k]
+                )
                 real[j + halfsize] = real[j] - tpre
                 imag[j + halfsize] = imag[j] - tpim
                 real[j] += tpre
@@ -86,6 +90,7 @@ def reverseBits(x, bits):
 # Computes the discrete Fourier transform(DFT) of the given complex vector, storing the result back into the vector.
 # The vector can have any length.This requires the convolution function, which in turn requires the radix - 2 FFT
 # function. Uses Bluestein's chirp z-transform algorithm.
+
 
 def transformBluestein(real, imag):
     # Find a power - of - 2 convolution length m such that m >= n * 2 + 1
@@ -137,6 +142,7 @@ def transformBluestein(real, imag):
 
 # Computes the circular convolution of the given real vectors.Each vector's length must be the same.
 
+
 def convolveReal(x, y, out):
     if (len(x) != len(y)) or (len(x) != len(out)):
         print("Mismatched lengths")
@@ -148,9 +154,15 @@ def convolveReal(x, y, out):
 
 # Computes the circular convolution of the given complex vectors.Each vector's length must be the same.
 
+
 def convolveComplex(xreal, ximag, yreal, yimag, outreal, outimag):
-    if (len(xreal) != len(ximag)) or (len(xreal) != len(yreal)) or (len(yreal) != len(yimag)) or (
-            len(xreal) != len(outreal)) or (len(outreal) != len(outimag)):
+    if (
+        (len(xreal) != len(ximag))
+        or (len(xreal) != len(yreal))
+        or (len(yreal) != len(yimag))
+        or (len(xreal) != len(outreal))
+        or (len(outreal) != len(outimag))
+    ):
         print("Mismatched lengths")
 
     n = len(xreal)
