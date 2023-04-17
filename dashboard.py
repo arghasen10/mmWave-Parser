@@ -1,61 +1,88 @@
 import time
 import tkinter as tk
+from threading import Event, Thread
 from tkinter import ttk
 
 import numpy as np
-import seaborn as sns
+from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
-from matplotlib.figure import Figure
+from msgspec import Struct
+from msgspec.json import decode
 from ttkthemes import ThemedTk
 
-sns.set_theme(palette="viridis")
 
-rng1 = np.random.default_rng()
-rng2 = np.random.default_rng()
-
-fig1 = Figure(figsize=(5, 5), dpi=96)
-ax1 = fig1.add_subplot(111, xlim=(-11, 11), ylim=(-1, 21))
-ax1.set_title("Plot Positions")
-ax1.set_xlabel("X-Axis")
-ax1.set_ylabel("Y-Axis")
-(obj1,) = ax1.plot([], [], "o", lw=3)
-
-fig2 = Figure(figsize=(5, 5), dpi=96)
-ax2 = fig2.add_subplot(111, xlim=(-11, 11), ylim=(-1, 21))
-ax2.set_title("Plot Positions")
-ax2.set_xlabel("X-Axis")
-ax2.set_ylabel("Y-Axis")
-(obj2,) = ax2.plot([], [], "o", lw=3)
+class Schema(Struct):
+    x_coord: list[float]
+    y_coord: list[float]
+    rp_y: list[float]
+    noiserp_y: list[float]
+    doppz: list[list[int]]
 
 
-def init1():
-    obj1.set_data([], [])
-    return (obj1,)
+data = Schema([], [], [], [], [[]])
 
 
-def animate1(i):
-    if not paused:
-        n_obj = rng1.integers(21)
-        x = rng1.uniform(-10, 10, n_obj)
-        y = rng1.uniform(0, 20, n_obj)
-        obj1.set_data(x, y)
-    return (obj1,)
+def read_json(pause):
+    global data
+    with open("dataset/CCW_A_1.json", "rb") as f:
+        while not pause.is_set():
+            line = f.readline()
+            if not line:
+                break
+            data = decode(line, type=Schema)
+            time.sleep(0.4)
 
 
-def init2():
-    obj2.set_data([], [])
-    return (obj2,)
+# Graph for position
+fig_pos, ax_pos = plt.subplots(figsize=(5, 5))
+ax_pos.set_xlim([-11, 11])
+ax_pos.set_ylim([-1, 21])
+ax_pos.set_title("Position")
+ax_pos.set_xlabel("X-Axis")
+ax_pos.set_ylabel("Y-Axis")
+(obj_pos,) = ax_pos.plot([], [], "o", lw=3)
 
 
-def animate2(i):
-    if not paused:
-        n_obj = rng2.integers(21)
-        x = rng2.uniform(-10, 10, n_obj)
-        y = rng2.uniform(0, 20, n_obj)
-        obj2.set_data(x, y)
-    return (obj2,)
+def animate_pos(_):
+    if not pause.is_set():
+        obj_pos.set_data(data.x_coord, data.y_coord)
+    return (obj_pos,)
+
+
+# Graph for doppler
+fig_dop, ax_dop = plt.subplots(figsize=(8, 6))
+
+im = ax_dop.imshow(data.doppz, aspect="auto", interpolation="gaussian", animated=True)
+ax_dop.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+
+
+def animate_dop(_):
+    if not pause.is_set:
+        im.set_array(data.doppz)
+    return (im,)
+
+
+# Graph for noise profile
+fig_noise, ax_noise = plt.subplots(figsize=(8, 6))
+ax_noise.set_xlim([1, 256])
+ax_noise.set_ylim([0, 150])
+ax_noise.set_title("Noise")
+ax_noise.set_xlabel("X-Axis")
+ax_noise.set_ylabel("dB")
+(obj_rp,) = ax_noise.plot([], [])
+(obj_noiserp,) = ax_noise.plot([], [])
+ax_noise.legend([obj_rp, obj_noiserp], ["rp_y", "noiserp_y"])
+
+x_axis = np.arange(256) + 1
+
+
+def animate_noise(_):
+    if not pause.is_set:
+        obj_rp.set_data(x_axis, data.rp_y)
+        obj_noiserp.set_data(x_axis, data.noiserp_y)
+    return (obj_rp, obj_noiserp)
 
 
 class ConfigureFrame(ttk.Frame):
@@ -257,12 +284,12 @@ class ConfigureFrame(ttk.Frame):
             widget.grid(padx=5, pady=5)
 
     def send_config(*args, **kwargs):
-        global paused
-        paused = True
+        global pause, anim_pos, anim_dop, anim_noise
+        pause.set()
         # send config to device, not implemented
         # set axes range here
         # time.sleep(2)  # this is to simulate awaiting for response, not needed otherwise
-        paused = False
+        pause.clear()
 
 
 class PlotFrame(ttk.Frame):
@@ -272,21 +299,21 @@ class PlotFrame(ttk.Frame):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
 
-        canvas1 = FigureCanvasTkAgg(fig1, self)
-        canvas1.draw()
-        toolbar1 = NavigationToolbar2Tk(canvas1, self, pack_toolbar=False)
-        toolbar1.update()
+        canvas_pos = FigureCanvasTkAgg(fig_pos, self)
+        canvas_pos.draw()
+        toolbar_pos = NavigationToolbar2Tk(canvas_pos, self, pack_toolbar=False)
+        toolbar_pos.update()
 
-        toolbar1.grid(row=1, column=0, sticky=tk.EW)
-        canvas1.get_tk_widget().grid(row=0, column=0, sticky=tk.NSEW)
+        toolbar_pos.grid(row=1, column=0, sticky=tk.EW)
+        canvas_pos.get_tk_widget().grid(row=0, column=0, sticky=tk.NSEW)
 
-        canvas2 = FigureCanvasTkAgg(fig2, self)
-        canvas2.draw()
-        toolbar2 = NavigationToolbar2Tk(canvas2, self, pack_toolbar=False)
-        toolbar2.update()
+        canvas_dop = FigureCanvasTkAgg(fig_noise, self)
+        canvas_dop.draw()
+        toolbar_dop = NavigationToolbar2Tk(canvas_dop, self, pack_toolbar=False)
+        toolbar_dop.update()
 
-        toolbar2.grid(row=1, column=1, sticky=tk.EW)
-        canvas2.get_tk_widget().grid(row=0, column=1, sticky=tk.NSEW)
+        toolbar_dop.grid(row=1, column=1, sticky=tk.EW)
+        canvas_dop.get_tk_widget().grid(row=0, column=1, sticky=tk.NSEW)
 
 
 class App(ThemedTk):
@@ -294,8 +321,10 @@ class App(ThemedTk):
         super().__init__()
 
         self.title("mmWave Visualizer")
-        self.geometry("900x700")
-        self.resizable(False, False)
+        # self.wm_iconphoto(False, tk.PhotoImage(file="assets/ubinetlogo.png"))
+        width = self.winfo_screenwidth()
+        height = self.winfo_screenheight()
+        self.geometry(f"{width}x{height}")
         self.set_theme("arc")
 
         style = ttk.Style()
@@ -304,7 +333,7 @@ class App(ThemedTk):
         )
         style.configure("TLabelframe.Label", font=("Noto Sans Mono", 12, "bold"))
 
-        notebook = ttk.Notebook(self, width=900, height=700)
+        notebook = ttk.Notebook(self, width=width, height=height)
         notebook.pack(padx=5, pady=10, expand=True)
 
         frameconf = ConfigureFrame(notebook)
@@ -319,7 +348,19 @@ class App(ThemedTk):
 
 if __name__ == "__main__":
     app = App()
-    paused = True
-    anim1 = FuncAnimation(fig1, animate1, init_func=init1, interval=1000, blit=True)
-    anim2 = FuncAnimation(fig2, animate2, init_func=init2, interval=500, blit=True)
+    pause = Event()
+    pause.set()
+    th = Thread(
+        target=read_json, args=(pause,), daemon=True, name="Json Schema Reading Daemon"
+    )
+    th.start()
+    anim_pos = FuncAnimation(
+        fig_pos, animate_pos, interval=400, blit=True, cache_frame_data=False
+    )
+    anim_dop = FuncAnimation(
+        fig_dop, animate_dop, interval=400, blit=True, cache_frame_data=False
+    )
+    anim_noise = FuncAnimation(
+        fig_noise, animate_noise, interval=400, blit=True, cache_frame_data=False
+    )
     app.mainloop()
