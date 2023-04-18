@@ -1,6 +1,6 @@
 import time
 import tkinter as tk
-from threading import Event, Thread
+from multiprocessing import Event, Manager, Process
 from tkinter import ttk
 
 import numpy as np
@@ -21,18 +21,44 @@ class Schema(Struct):
     doppz: list[list[int]]
 
 
-data = Schema([], [], [], [], [[]])
+class ReadData:
+    def __init__(self) -> None:
+        manager = Manager()
 
+        self.x_coord = manager.list()
+        self.y_coord = manager.list()
+        self.rp_y = manager.list()
+        self.noiserp_y = manager.list()
+        self.doppz = manager.list()
+        self.doppz.extend([[]])
 
-def read_json(pause):
-    global data
-    with open("dataset/CCW_A_1.json", "rb") as f:
-        while not pause.is_set():
-            line = f.readline()
-            if not line:
-                break
-            data = decode(line, type=Schema)
-            time.sleep(0.4)
+        self.play = Event()
+
+        self.daemon_proc = Process(
+            target=self.json_reader_daemon,
+            args=(
+                self.x_coord,
+                self.y_coord,
+                self.rp_y,
+                self.noiserp_y,
+                self.doppz,
+                self.play,
+            ),
+            daemon=True,
+        )
+
+    @staticmethod
+    def json_reader_daemon(x_coord, y_coord, rp_y, noiserp_y, doppz, play):
+        with open("CCW_A_1.json", "rb") as f:
+            while play.wait():
+                line = f.readline()
+                data = decode(line, type=Schema)
+                x_coord[:] = data.x_coord
+                y_coord[:] = data.y_coord
+                rp_y[:] = data.rp_y
+                noiserp_y[:] = data.noiserp_y
+                doppz[:] = data.doppz
+                time.sleep(0.4)
 
 
 # Graph for position
@@ -46,9 +72,11 @@ ax_pos.set_ylabel("Y-Axis")
 
 
 def animate_pos(_):
-    if not pause.is_set():
+    global paused
+    if not paused:
         obj_pos.set_data(data.x_coord, data.y_coord)
-    return (obj_pos,)
+        return (obj_pos,)
+    return []
 
 
 # Graph for doppler
@@ -59,9 +87,11 @@ ax_dop.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
 
 
 def animate_dop(_):
-    if not pause.is_set:
+    global paused
+    if not paused:
         im.set_array(data.doppz)
-    return (im,)
+        return (im,)
+    return []
 
 
 # Graph for noise profile
@@ -75,13 +105,14 @@ ax_noise.set_ylabel("dB")
 (obj_noiserp,) = ax_noise.plot([], [])
 ax_noise.legend([obj_rp, obj_noiserp], ["rp_y", "noiserp_y"])
 
-x_axis = np.arange(256) + 1
+noise_xaxis = np.arange(256) + 1
 
 
 def animate_noise(_):
-    if not pause.is_set:
-        obj_rp.set_data(x_axis, data.rp_y)
-        obj_noiserp.set_data(x_axis, data.noiserp_y)
+    global paused
+    if not paused:
+        obj_rp.set_data(noise_xaxis, data.rp_y)
+        obj_noiserp.set_data(noise_xaxis, data.noiserp_y)
     return (obj_rp, obj_noiserp)
 
 
@@ -284,12 +315,25 @@ class ConfigureFrame(ttk.Frame):
             widget.grid(padx=5, pady=5)
 
     def send_config(*args, **kwargs):
-        global pause, anim_pos, anim_dop, anim_noise
-        pause.set()
+        global paused
+        # global pause, obj_pos, ax_pos, im, ax_dop, obj_rp, obj_noiserp, ax_noise
+        paused = True
         # send config to device, not implemented
         # set axes range here
         # time.sleep(2)  # this is to simulate awaiting for response, not needed otherwise
-        pause.clear()
+        paused = False
+        # print(pause.is_set())
+        print(data)
+        # while data is None:
+        #     time.sleep(0.1)
+        # (obj_pos,) = ax_pos.plot([], [], "o", lw=3)
+        # im = ax_dop.imshow(
+        #     data.doppz, aspect="auto", interpolation="gaussian", animated=True
+        # )
+        # ax_dop.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+        # (obj_rp,) = ax_noise.plot([], [])
+        # (obj_noiserp,) = ax_noise.plot([], [])
+        # ax_noise.legend([obj_rp, obj_noiserp], ["rp_y", "noiserp_y"])
 
 
 class PlotFrame(ttk.Frame):
@@ -307,13 +351,13 @@ class PlotFrame(ttk.Frame):
         toolbar_pos.grid(row=1, column=0, sticky=tk.EW)
         canvas_pos.get_tk_widget().grid(row=0, column=0, sticky=tk.NSEW)
 
-        canvas_dop = FigureCanvasTkAgg(fig_noise, self)
-        canvas_dop.draw()
-        toolbar_dop = NavigationToolbar2Tk(canvas_dop, self, pack_toolbar=False)
-        toolbar_dop.update()
+        canvas_noise = FigureCanvasTkAgg(fig_noise, self)
+        canvas_noise.draw()
+        toolbar_noise = NavigationToolbar2Tk(canvas_noise, self, pack_toolbar=False)
+        toolbar_noise.update()
 
-        toolbar_dop.grid(row=1, column=1, sticky=tk.EW)
-        canvas_dop.get_tk_widget().grid(row=0, column=1, sticky=tk.NSEW)
+        toolbar_noise.grid(row=1, column=1, sticky=tk.EW)
+        canvas_noise.get_tk_widget().grid(row=0, column=1, sticky=tk.NSEW)
 
 
 class App(ThemedTk):
@@ -347,20 +391,20 @@ class App(ThemedTk):
 
 
 if __name__ == "__main__":
-    app = App()
-    pause = Event()
-    pause.set()
-    th = Thread(
-        target=read_json, args=(pause,), daemon=True, name="Json Schema Reading Daemon"
-    )
+    # pause = Event()
+    # pause.set()
+    th = Thread(target=read_json, daemon=True, name="Json Schema Reading Daemon")
     th.start()
-    anim_pos = FuncAnimation(
-        fig_pos, animate_pos, interval=400, blit=True, cache_frame_data=False
-    )
-    anim_dop = FuncAnimation(
-        fig_dop, animate_dop, interval=400, blit=True, cache_frame_data=False
-    )
-    anim_noise = FuncAnimation(
-        fig_noise, animate_noise, interval=400, blit=True, cache_frame_data=False
-    )
+    app = App()
+    # anim_pos = FuncAnimation(
+    #     fig_pos, animate_pos, interval=400, blit=True, cache_frame_data=False
+    # )
+    # anim_dop = FuncAnimation(
+    #     fig_dop, animate_dop, interval=400, blit=True, cache_frame_data=False
+    # )
+    # anim_noise = FuncAnimation(
+    #     fig_noise, animate_noise, interval=400, blit=True, cache_frame_data=False
+    # )
     app.mainloop()
+    # pause.set()
+    th.join()
