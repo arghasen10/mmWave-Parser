@@ -49,7 +49,7 @@ class ReadData:
 
     @staticmethod
     def json_reader_daemon(x_coord, y_coord, rp_y, noiserp_y, doppz, play):
-        with open("CCW_A_1.json", "rb") as f:
+        with open("dataset/CCW_A_1.json", "rb") as f:
             while play.wait():
                 line = f.readline()
                 data = decode(line, type=Schema)
@@ -72,26 +72,24 @@ ax_pos.set_ylabel("Y-Axis")
 
 
 def animate_pos(_):
-    global paused
-    if not paused:
-        obj_pos.set_data(data.x_coord, data.y_coord)
-        return (obj_pos,)
-    return []
+    if read_data.play.is_set():
+        obj_pos.set_data(read_data.x_coord, read_data.y_coord)
+    return (obj_pos,)
 
 
 # Graph for doppler
 fig_dop, ax_dop = plt.subplots(figsize=(8, 6))
 
-im = ax_dop.imshow(data.doppz, aspect="auto", interpolation="gaussian", animated=True)
+# im = ax_dop.imshow(
+#     read_data.doppz, aspect="auto", interpolation="gaussian", animated=True
+# )
 ax_dop.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
 
 
 def animate_dop(_):
-    global paused
-    if not paused:
-        im.set_array(data.doppz)
-        return (im,)
-    return []
+    if read_data.play.is_set():
+        im.set_array(read_data.doppz)
+    return (im,)
 
 
 # Graph for noise profile
@@ -109,10 +107,9 @@ noise_xaxis = np.arange(256) + 1
 
 
 def animate_noise(_):
-    global paused
-    if not paused:
-        obj_rp.set_data(noise_xaxis, data.rp_y)
-        obj_noiserp.set_data(noise_xaxis, data.noiserp_y)
+    if read_data.play.is_set():
+        obj_rp.set_data(noise_xaxis, read_data.rp_y)
+        obj_noiserp.set_data(noise_xaxis, read_data.noiserp_y)
     return (obj_rp, obj_noiserp)
 
 
@@ -315,15 +312,12 @@ class ConfigureFrame(ttk.Frame):
             widget.grid(padx=5, pady=5)
 
     def send_config(*args, **kwargs):
-        global paused
+        global read_data
         # global pause, obj_pos, ax_pos, im, ax_dop, obj_rp, obj_noiserp, ax_noise
-        paused = True
-        # send config to device, not implemented
-        # set axes range here
-        # time.sleep(2)  # this is to simulate awaiting for response, not needed otherwise
-        paused = False
-        # print(pause.is_set())
-        print(data)
+        read_data.play.clear()
+        print(read_data.x_coord)
+        time.sleep(2)
+        read_data.play.set()
         # while data is None:
         #     time.sleep(0.1)
         # (obj_pos,) = ax_pos.plot([], [], "o", lw=3)
@@ -391,20 +385,16 @@ class App(ThemedTk):
 
 
 if __name__ == "__main__":
-    # pause = Event()
-    # pause.set()
-    th = Thread(target=read_json, daemon=True, name="Json Schema Reading Daemon")
-    th.start()
     app = App()
-    # anim_pos = FuncAnimation(
-    #     fig_pos, animate_pos, interval=400, blit=True, cache_frame_data=False
-    # )
+    read_data = ReadData()
+    read_data.daemon_proc.start()
+    anim_pos = FuncAnimation(
+        fig_pos, animate_pos, interval=400, blit=True, cache_frame_data=False
+    )
     # anim_dop = FuncAnimation(
     #     fig_dop, animate_dop, interval=400, blit=True, cache_frame_data=False
     # )
-    # anim_noise = FuncAnimation(
-    #     fig_noise, animate_noise, interval=400, blit=True, cache_frame_data=False
-    # )
+    anim_noise = FuncAnimation(
+        fig_noise, animate_noise, interval=400, blit=True, cache_frame_data=False
+    )
     app.mainloop()
-    # pause.set()
-    th.join()
