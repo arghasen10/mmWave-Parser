@@ -3,6 +3,7 @@ import tkinter as tk
 from multiprocessing import Event, Manager, Process
 from tkinter import ttk
 
+# import numba
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -73,6 +74,7 @@ ax_pos.set_ylabel("Y-Axis")
 
 def animate_pos(_):
     if read_data.play.is_set():
+        print(read_data.x_coord, read_data.y_coord)
         obj_pos.set_data(read_data.x_coord, read_data.y_coord)
     return (obj_pos,)
 
@@ -80,15 +82,21 @@ def animate_pos(_):
 # Graph for doppler
 fig_dop, ax_dop = plt.subplots(figsize=(8, 6))
 
-# im = ax_dop.imshow(
-#     read_data.doppz, aspect="auto", interpolation="gaussian", animated=True
-# )
+im = ax_dop.imshow(
+    np.zeros((16, 256), np.int32),
+    aspect="auto",
+    interpolation="gaussian",
+    cmap="viridis",
+    animated=True,
+)
 ax_dop.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
 
 
 def animate_dop(_):
     if read_data.play.is_set():
-        im.set_array(read_data.doppz)
+        heatmap = read_data.doppz
+        im.set_clim(np.amin(heatmap), np.amax(heatmap))
+        im.set_data(heatmap)
     return (im,)
 
 
@@ -313,27 +321,18 @@ class ConfigureFrame(ttk.Frame):
 
     def send_config(*args, **kwargs):
         global read_data
-        # global pause, obj_pos, ax_pos, im, ax_dop, obj_rp, obj_noiserp, ax_noise
         read_data.play.clear()
-        print(read_data.x_coord)
         time.sleep(2)
         read_data.play.set()
-        # while data is None:
-        #     time.sleep(0.1)
-        # (obj_pos,) = ax_pos.plot([], [], "o", lw=3)
-        # im = ax_dop.imshow(
-        #     data.doppz, aspect="auto", interpolation="gaussian", animated=True
-        # )
-        # ax_dop.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
-        # (obj_rp,) = ax_noise.plot([], [])
-        # (obj_noiserp,) = ax_noise.plot([], [])
-        # ax_noise.legend([obj_rp, obj_noiserp], ["rp_y", "noiserp_y"])
+        im.set_clim(np.min(read_data.doppz), np.max(read_data.doppz))
 
 
 class PlotFrame(ttk.Frame):
     def __init__(self, container):
         super().__init__(container)
 
+        self.rowconfigure(0, weight=1)
+        self.rowconfigure(2, weight=1)
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
 
@@ -352,6 +351,26 @@ class PlotFrame(ttk.Frame):
 
         toolbar_noise.grid(row=1, column=1, sticky=tk.EW)
         canvas_noise.get_tk_widget().grid(row=0, column=1, sticky=tk.NSEW)
+
+        canvas_dop = FigureCanvasTkAgg(fig_dop, self)
+        canvas_dop.draw()
+        toolbar_dop = NavigationToolbar2Tk(canvas_dop, self, pack_toolbar=False)
+        toolbar_dop.update()
+
+        toolbar_dop.grid(
+            row=3,
+            column=0,
+            columnspan=2,
+            sticky=tk.EW,
+            padx=self.winfo_screenwidth() // 4,
+        )
+        canvas_dop.get_tk_widget().grid(
+            row=2,
+            column=0,
+            columnspan=2,
+            sticky=tk.NSEW,
+            padx=self.winfo_screenwidth() // 4,
+        )
 
 
 class App(ThemedTk):
@@ -391,9 +410,13 @@ if __name__ == "__main__":
     anim_pos = FuncAnimation(
         fig_pos, animate_pos, interval=400, blit=True, cache_frame_data=False
     )
-    # anim_dop = FuncAnimation(
-    #     fig_dop, animate_dop, interval=400, blit=True, cache_frame_data=False
-    # )
+    anim_dop = FuncAnimation(
+        fig_dop,
+        animate_dop,
+        interval=400,
+        blit=True,
+        cache_frame_data=False,
+    )
     anim_noise = FuncAnimation(
         fig_noise, animate_noise, interval=400, blit=True, cache_frame_data=False
     )
