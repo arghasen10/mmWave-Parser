@@ -378,7 +378,8 @@ class App(ThemedTk):
         super().__init__()
 
         self.title("mmWave Visualizer")
-        self.wm_iconphoto(False, tk.PhotoImage(file="assets/ubinetlogo.png"))
+        icon = tk.PhotoImage(file="assets/ubinetlogo.png")
+        self.iconphoto(False, icon)
         width = self.winfo_screenwidth()
         height = self.winfo_screenheight()
         self.geometry(f"{width}x{height}")
