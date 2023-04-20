@@ -70,7 +70,7 @@ ax_pos.set_ylabel("Y-Axis")
 (obj_pos,) = ax_pos.plot([], [], "o", lw=3)
 
 
-def animate_pos(i):
+def animate_pos(_):
     if read_data.play.is_set():
         obj_pos.set_data(read_data.x_coord, read_data.y_coord)
     return (obj_pos,)
@@ -91,7 +91,7 @@ ax_dop.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
 
 
 # @njit
-def animate_dop(i):
+def animate_dop(_):
     if read_data.play.is_set():
         heatmap = read_data.doppz
         # HACK: This hack is to set min max colors. This will slow down the
@@ -114,7 +114,7 @@ ax_noise.legend([obj_rp, obj_noiserp], ["rp_y", "noiserp_y"])
 noise_xaxis = np.arange(256) + 1
 
 
-def animate_noise(i):
+def animate_noise(_):
     if read_data.play.is_set():
         obj_rp.set_data(noise_xaxis, read_data.rp_y)
         obj_noiserp.set_data(noise_xaxis, read_data.noiserp_y)
@@ -319,7 +319,7 @@ class ConfigureFrame(ttk.Frame):
         for widget in plot.winfo_children():
             widget.grid(padx=5, pady=5)
 
-    def send_config(*args, **kwargs):
+    def send_config(self):
         global read_data
         read_data.play.clear()
         time.sleep(2)
