@@ -6,3 +6,5 @@ dataset.csv
 .env
 results/
 videodata/
+pdm.lock
+*.bak

@@ -1,0 +1,30 @@
+[tool.pdm]
+[tool.pdm.dev-dependencies]
+format = ["black>=23.3.0", "isort>=5.12.0"]
+
+[project]
+name = ""
+version = ""
+description = ""
+authors = [{ name = "Aritra Sen", email = "aretrosen@proton.me" }]
+dependencies = [
+    "matplotlib>=3.7.1",
+    "python-dotenv>=1.0.0",
+    "pyserial>=3.5",
+    "pandas>=1.5.3",
+    "seaborn>=0.12.2",
+    "ttkthemes>=3.2.2",
+    "opencv-python>=4.7.0.72",
+    "msgspec>=0.14.1",
+]
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+[tool.pyright]
+exclude = [
+  "**/Configurations",
+  "**/__pycache__",
+  "**/dataset",
+  "**/__pypackages__",
+]
+extraPaths = ["__pypackages__/3.10/lib/"]

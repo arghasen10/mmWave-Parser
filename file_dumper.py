@@ -1,19 +1,21 @@
-#!/usr/bin/env python3.8
-import serial
 import time
-import numpy as np
 
-configFileName = 'sensor_out_of_box_demo.cfg'
+import numpy as np
+import serial
+
+configFileName = "sensor_out_of_box_demo.cfg"
 CLIport = {}
 Dataport = {}
-byteBuffer = np.zeros(2 ** 15, dtype='uint8')
+byteBuffer = np.zeros(2**15, dtype="uint8")
 byteBufferLength = 0
 
 
 def file_create():
-    filename = '/home/argha/Documents/github/AWR1642-Read-Data-Python-MMWAVE-SDK-2/dataset/'
+    filename = (
+        "/home/argha/Documents/github/AWR1642-Read-Data-Python-MMWAVE-SDK-2/dataset/"
+    )
     filename += time.strftime("%Y%m%d_%H%M%S")
-    print('Created file', filename)
+    print("Created file", filename)
     return filename
 
 
@@ -24,6 +26,7 @@ linecounter = 0
 
 # ------------------------------------------------------------------
 
+
 # Function to configure the serial ports and send the data from
 # the configuration file to the radar
 def serialConfig(configFileName):
@@ -32,11 +35,11 @@ def serialConfig(configFileName):
     # Open the serial ports for the configuration and the data ports
 
     # Raspberry pi
-    CLIport = serial.Serial('/dev/ttyACM1', 115200)
-    Dataport = serial.Serial('/dev/ttyACM2', 921600)
-    config = [line.rstrip('\r\n') for line in open(configFileName)]
+    CLIport = serial.Serial("/dev/ttyACM1", 115200)
+    Dataport = serial.Serial("/dev/ttyACM2", 921600)
+    config = [line.rstrip("\r\n") for line in open(configFileName)]
     for i in config:
-        CLIport.write((i + '\n').encode())
+        CLIport.write((i + "\n").encode())
         print(i)
         time.sleep(0.01)
 
@@ -45,14 +48,16 @@ def serialConfig(configFileName):
 
 # ------------------------------------------------------------------
 
+
 # Function to parse the data inside the configuration file
 def parseConfigFile(configFileName):
-    configParameters = {}  # Initialize an empty dictionary to store the configuration parameters
+    configParameters = (
+        {}
+    )  # Initialize an empty dictionary to store the configuration parameters
 
     # Read the configuration file and send it to the board
-    config = [line.rstrip('\r\n') for line in open(configFileName)]
+    config = [line.rstrip("\r\n") for line in open(configFileName)]
     for i in config:
-
         # Split the line
         splitWords = i.split(" ")
 
@@ -76,7 +81,6 @@ def parseConfigFile(configFileName):
 
         # Get the information about the frame configuration
         elif "frameCfg" in splitWords[0]:
-
             chirpStartIdx = int(splitWords[1])
             chirpEndIdx = int(splitWords[2])
             numLoops = int(splitWords[3])
@@ -88,30 +92,45 @@ def parseConfigFile(configFileName):
     configParameters["numDopplerBins"] = numChirpsPerFrame / numTxAnt
     configParameters["numRangeBins"] = numAdcSamplesRoundTo2
     configParameters["rangeResolutionMeters"] = (3e8 * digOutSampleRate * 1e3) / (
-            2 * freqSlopeConst * 1e12 * numAdcSamples)
+        2 * freqSlopeConst * 1e12 * numAdcSamples
+    )
     configParameters["rangeIdxToMeters"] = (3e8 * digOutSampleRate * 1e3) / (
-            2 * freqSlopeConst * 1e12 * configParameters["numRangeBins"])
+        2 * freqSlopeConst * 1e12 * configParameters["numRangeBins"]
+    )
     configParameters["dopplerResolutionMps"] = 3e8 / (
-            2 * startFreq * 1e9 * (idleTime + rampEndTime) * 1e-6 * configParameters["numDopplerBins"] * numTxAnt)
-    configParameters["maxRange"] = (300 * 0.9 * digOutSampleRate) / (2 * freqSlopeConst * 1e3)
-    configParameters["maxVelocity"] = 3e8 / (4 * startFreq * 1e9 * (idleTime + rampEndTime) * 1e-6 * numTxAnt)
+        2
+        * startFreq
+        * 1e9
+        * (idleTime + rampEndTime)
+        * 1e-6
+        * configParameters["numDopplerBins"]
+        * numTxAnt
+    )
+    configParameters["maxRange"] = (300 * 0.9 * digOutSampleRate) / (
+        2 * freqSlopeConst * 1e3
+    )
+    configParameters["maxVelocity"] = 3e8 / (
+        4 * startFreq * 1e9 * (idleTime + rampEndTime) * 1e-6 * numTxAnt
+    )
 
     return configParameters
 
 
 # ------------------------------------------------------------------
 
+
 # Funtion to read and parse the incoming data
 def readAndParseData16xx(Dataport, filename):
     global byteBuffer, byteBufferLength
 
     readBuffer = Dataport.read(Dataport.in_waiting)
-    byteVec = np.frombuffer(readBuffer, dtype='uint8')
-    with open(filename, 'w') as file:
+    byteVec = np.frombuffer(readBuffer, dtype="uint8")
+    with open(filename, "w") as file:
         file.write(byteVec)
 
 
 # ------------------------------------------------------------------
+
 
 # Funtion to update the data and display in the plot
 def update(filename):
@@ -128,8 +147,8 @@ def update(filename):
 
 # Configurate the serial port
 CLIport, Dataport = serialConfig(configFileName)
-print('CLIport', CLIport)
-print('Dataport', Dataport)
+print("CLIport", CLIport)
+print("Dataport", Dataport)
 # Get the configuration parameters from the configuration file
 configParameters = parseConfigFile(configFileName)
 
@@ -142,7 +161,7 @@ while True:
     linecounter += 1
     if linecounter > 10000:
         linecounter = 0
-        print('creatng new file')
+        print("creatng new file")
         filename = file_create()
     try:
         # Update the data and check if the data is okay
@@ -152,7 +171,7 @@ while True:
 
     # Stop the program and close everything if Ctrl + c is pressed
     except KeyboardInterrupt:
-        CLIport.write('sensorStop\n'.encode())
+        CLIport.write("sensorStop\n".encode())
         CLIport.close()
         Dataport.close()
         # win.close()
