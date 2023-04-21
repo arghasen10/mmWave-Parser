@@ -3,12 +3,11 @@ import tkinter as tk
 from multiprocessing import Event, Manager, Process
 from tkinter import ttk
 
-# import numba
 import numpy as np
-from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
+from matplotlib.figure import Figure
 from msgspec import Struct
 from msgspec.json import decode
 from ttkthemes import ThemedTk
@@ -50,7 +49,7 @@ class ReadData:
 
     @staticmethod
     def json_reader_daemon(x_coord, y_coord, rp_y, noiserp_y, doppz, play):
-        with open("dataset/CCW_A_1.json", "rb") as f:
+        with open("dataset/LR_A_1.json", "rb") as f:
             while play.wait():
                 line = f.readline()
                 data = decode(line, type=Schema)
@@ -63,9 +62,8 @@ class ReadData:
 
 
 # Graph for position
-fig_pos, ax_pos = plt.subplots(figsize=(5, 5))
-ax_pos.set_xlim([-11, 11])
-ax_pos.set_ylim([-1, 21])
+fig_pos = Figure(figsize=(5, 5))
+ax_pos = fig_pos.add_subplot(111, xlim=(-11, 11), ylim=(-1, 21))
 ax_pos.set_title("Position")
 ax_pos.set_xlabel("X-Axis")
 ax_pos.set_ylabel("Y-Axis")
@@ -74,13 +72,13 @@ ax_pos.set_ylabel("Y-Axis")
 
 def animate_pos(_):
     if read_data.play.is_set():
-        print(read_data.x_coord, read_data.y_coord)
         obj_pos.set_data(read_data.x_coord, read_data.y_coord)
     return (obj_pos,)
 
 
 # Graph for doppler
-fig_dop, ax_dop = plt.subplots(figsize=(8, 6))
+fig_dop = Figure(figsize=(8, 6))
+ax_dop = fig_dop.add_subplot(111)
 
 im = ax_dop.imshow(
     np.zeros((16, 256), np.int32),
@@ -92,18 +90,20 @@ im = ax_dop.imshow(
 ax_dop.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
 
 
+# @njit
 def animate_dop(_):
     if read_data.play.is_set():
         heatmap = read_data.doppz
+        # HACK: This hack is to set min max colors. This will slow down the
+        # function though.
         im.set_clim(np.amin(heatmap), np.amax(heatmap))
         im.set_data(heatmap)
     return (im,)
 
 
 # Graph for noise profile
-fig_noise, ax_noise = plt.subplots(figsize=(8, 6))
-ax_noise.set_xlim([1, 256])
-ax_noise.set_ylim([0, 150])
+fig_noise = Figure(figsize=(8, 6))
+ax_noise = fig_noise.add_subplot(111, xlim=(1, 256), ylim=(0, 150))
 ax_noise.set_title("Noise")
 ax_noise.set_xlabel("X-Axis")
 ax_noise.set_ylabel("dB")
@@ -144,7 +144,7 @@ class ConfigureFrame(ttk.Frame):
         setup.columnconfigure(0, weight=1)
         setup.columnconfigure(1, weight=2)
 
-        ttk.Label(setup, text="Platform").grid(row=0, column=0, sticky=tk.W)
+        _ = ttk.Label(setup, text="Platform").grid(row=0, column=0, sticky=tk.W)
         self._platform = tk.StringVar(value="xWR16xx")
         ttk.Combobox(
             setup,
@@ -319,12 +319,11 @@ class ConfigureFrame(ttk.Frame):
         for widget in plot.winfo_children():
             widget.grid(padx=5, pady=5)
 
-    def send_config(*args, **kwargs):
+    def send_config(self):
         global read_data
         read_data.play.clear()
         time.sleep(2)
         read_data.play.set()
-        im.set_clim(np.min(read_data.doppz), np.max(read_data.doppz))
 
 
 class PlotFrame(ttk.Frame):
@@ -378,9 +377,11 @@ class App(ThemedTk):
         super().__init__()
 
         self.title("mmWave Visualizer")
-        self.wm_iconphoto(False, tk.PhotoImage(file="assets/ubinetlogo.png"))
+        icon = tk.PhotoImage(file="assets/ubinetlogo.png", master=self)
+        self.iconphoto(False, icon)
         width = self.winfo_screenwidth()
         height = self.winfo_screenheight()
+
         self.geometry(f"{width}x{height}")
         self.set_theme("arc")
 
@@ -404,9 +405,9 @@ class App(ThemedTk):
 
 
 if __name__ == "__main__":
-    app = App()
     read_data = ReadData()
     read_data.daemon_proc.start()
+    app = App()
     anim_pos = FuncAnimation(
         fig_pos, animate_pos, interval=400, blit=True, cache_frame_data=False
     )
